@@ -4,6 +4,7 @@ export interface Message {
   type: 'user' | 'ai' | 'memo';
   timestamp: Date;
   isMemory: boolean;
+  isFavorite?: boolean;
 }
 
 export type MessageType = 'user' | 'ai' | 'memo';

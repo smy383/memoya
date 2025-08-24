@@ -18,7 +18,14 @@
   "memo": {
     "title": "Memo",
     "noMemos": "No saved memos.",
-    "searchPlaceholder": "Search memos..."
+    "searchPlaceholder": "Search memos...",
+    "favorite": "Favorite",
+    "unfavorite": "Unfavorite", 
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this memo?",
+    "cancel": "Cancel",
+    "preview": "Preview"
   },
   "settings": {
     "title": "Settings",

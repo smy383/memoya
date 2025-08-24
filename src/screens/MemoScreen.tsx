@@ -6,13 +6,147 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Message } from '../types/message';
-import { MessageBubble } from '../components/MessageBubble';
 import { StorageService } from '../services/storageService';
 import { useTheme } from '../contexts/ThemeContext';
 import { responsiveFontSize, SPACING, wp } from '../styles/dimensions';
+
+interface MemoItemProps {
+  memo: Message;
+  onToggleFavorite: (memoId: string) => void;
+  onDelete: (memoId: string) => void;
+  onEdit: (memoId: string) => void;
+}
+
+const MemoItem: React.FC<MemoItemProps> = ({ memo, onToggleFavorite, onDelete, onEdit }) => {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getTitleAndPreview = (text: string) => {
+    const lines = text.split('\n');
+    const title = lines[0].length > 30 ? lines[0].substring(0, 30) + '...' : lines[0];
+    const preview = text.length > 100 ? text.substring(0, 100) + '...' : text;
+    return { title, preview };
+  };
+
+  const { title, preview } = getTitleAndPreview(memo.text);
+
+  const itemStyles = StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      marginHorizontal: SPACING.md,
+      marginVertical: SPACING.xs / 2,
+      borderRadius: 8,
+      padding: SPACING.sm,
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: SPACING.xs,
+    },
+    titleContainer: {
+      flex: 1,
+      marginRight: SPACING.sm,
+    },
+    title: {
+      fontSize: responsiveFontSize(16),
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    dateTime: {
+      fontSize: responsiveFontSize(12),
+      color: colors.textSecondary,
+    },
+    favoriteButton: {
+      padding: SPACING.xs,
+    },
+    content: {
+      marginBottom: SPACING.xs,
+    },
+    preview: {
+      fontSize: responsiveFontSize(13),
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: SPACING.xs,
+    },
+    actionButton: {
+      padding: SPACING.xs,
+      borderRadius: 8,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    deleteButton: {
+      backgroundColor: colors.error + '20',
+    },
+  });
+
+  return (
+    <View style={itemStyles.container}>
+      <View style={itemStyles.header}>
+        <View style={itemStyles.titleContainer}>
+          <Text style={itemStyles.title}>{title}</Text>
+          <Text style={itemStyles.dateTime}>{formatDateTime(memo.timestamp)}</Text>
+        </View>
+        <TouchableOpacity
+          style={itemStyles.favoriteButton}
+          onPress={() => onToggleFavorite(memo.id)}
+        >
+          <Icon
+            name={memo.isFavorite ? 'heart' : 'heart-outline'}
+            size={responsiveFontSize(20)}
+            color={memo.isFavorite ? colors.error : colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={itemStyles.content}>
+        <Text style={itemStyles.preview}>{preview}</Text>
+      </View>
+
+      <View style={itemStyles.actions}>
+        <TouchableOpacity
+          style={itemStyles.actionButton}
+          onPress={() => onEdit(memo.id)}
+        >
+          <Icon name="create-outline" size={responsiveFontSize(16)} color={colors.text} />
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[itemStyles.actionButton, itemStyles.deleteButton]}
+          onPress={() => onDelete(memo.id)}
+        >
+          <Icon name="trash-outline" size={responsiveFontSize(16)} color={colors.error} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 export const MemoScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -33,6 +167,12 @@ export const MemoScreen: React.FC = () => {
     try {
       const messages = await StorageService.getMessages();
       const memoMessages = messages.filter(msg => msg.isMemory);
+      // Sort by favorites first, then by date (newest first)
+      memoMessages.sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return b.timestamp.getTime() - a.timestamp.getTime();
+      });
       setMemos(memoMessages);
     } catch (error) {
       console.error('Error loading memos:', error);
@@ -50,12 +190,66 @@ export const MemoScreen: React.FC = () => {
     }
   };
 
+  const handleToggleFavorite = async (memoId: string) => {
+    try {
+      const memo = memos.find(m => m.id === memoId);
+      if (memo) {
+        await StorageService.updateMessage(memoId, {
+          isFavorite: !memo.isFavorite
+        });
+        loadMemos();
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
+
+  const handleDelete = (memoId: string) => {
+    Alert.alert(
+      t('memo.delete'),
+      t('memo.deleteConfirm'),
+      [
+        {
+          text: t('memo.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('memo.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await StorageService.deleteMessage(memoId);
+              loadMemos();
+            } catch (error) {
+              console.error('Error deleting memo:', error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = (memoId: string) => {
+    // TODO: Implement edit functionality
+    Alert.alert(t('memo.edit'), 'Edit functionality coming soon');
+  };
+
   const renderMemo = ({ item }: { item: Message }) => (
-    <MessageBubble message={item} />
+    <MemoItem 
+      memo={item}
+      onToggleFavorite={handleToggleFavorite}
+      onDelete={handleDelete}
+      onEdit={handleEdit}
+    />
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
+      <Icon 
+        name="document-text-outline" 
+        size={responsiveFontSize(64)} 
+        color={colors.textTertiary} 
+      />
       <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
         {t('memo.noMemos')}
       </Text>
@@ -88,7 +282,7 @@ export const MemoScreen: React.FC = () => {
       flex: 1,
     },
     memosContainer: {
-      paddingVertical: SPACING.md,
+      paddingVertical: SPACING.sm,
     },
     emptyContainer: {
       flex: 1,
@@ -99,6 +293,7 @@ export const MemoScreen: React.FC = () => {
     emptyText: {
       fontSize: responsiveFontSize(16),
       textAlign: 'center',
+      marginTop: SPACING.md,
     },
   });
 

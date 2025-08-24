@@ -42,6 +42,31 @@ export class StorageService {
     }
   }
 
+  static async updateMessage(messageId: string, updates: Partial<Message>): Promise<void> {
+    try {
+      const messages = await this.getMessages();
+      const messageIndex = messages.findIndex(msg => msg.id === messageId);
+      if (messageIndex !== -1) {
+        messages[messageIndex] = { ...messages[messageIndex], ...updates };
+        await this.saveMessages(messages);
+      }
+    } catch (error) {
+      console.error('Error updating message:', error);
+      throw error;
+    }
+  }
+
+  static async deleteMessage(messageId: string): Promise<void> {
+    try {
+      const messages = await this.getMessages();
+      const filteredMessages = messages.filter(msg => msg.id !== messageId);
+      await this.saveMessages(filteredMessages);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
+    }
+  }
+
   static async clearMessages(): Promise<void> {
     try {
       await AsyncStorage.removeItem(MESSAGES_KEY);

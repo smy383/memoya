@@ -18,7 +18,14 @@
   "memo": {
     "title": "메모",
     "noMemos": "저장된 메모가 없습니다.",
-    "searchPlaceholder": "메모 검색..."
+    "searchPlaceholder": "메모 검색...",
+    "favorite": "즐겨찾기",
+    "unfavorite": "즐겨찾기 해제",
+    "edit": "수정",
+    "delete": "삭제",
+    "deleteConfirm": "이 메모를 삭제하시겠습니까?",
+    "cancel": "취소",
+    "preview": "미리보기"
   },
   "settings": {
     "title": "설정",
