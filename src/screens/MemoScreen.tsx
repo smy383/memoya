@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Message } from '../types/message';
-import { StorageService } from '../services/storageService';
+import { StorageServiceV2 } from '../services/storageServiceV2';
 import { useTheme } from '../contexts/ThemeContext';
 import { responsiveFontSize, SPACING, wp } from '../styles/dimensions';
 
@@ -172,7 +172,8 @@ export const MemoScreen: React.FC = () => {
 
   const loadMemos = async () => {
     try {
-      const messages = await StorageService.getMessages();
+      // Load all messages from recent months (last 12 months for memos)
+      const messages = await StorageServiceV2.getMessagesWithPagination(12);
       const memoMessages = messages.filter(msg => msg.isMemory && !msg.isDeleted);
       // Sort by favorites first, then by date (newest first)
       memoMessages.sort((a, b) => {
@@ -201,7 +202,7 @@ export const MemoScreen: React.FC = () => {
     try {
       const memo = memos.find(m => m.id === memoId);
       if (memo) {
-        await StorageService.updateMessage(memoId, {
+        await StorageServiceV2.updateMessage(memoId, {
           isFavorite: !memo.isFavorite
         });
         loadMemos();
@@ -225,7 +226,7 @@ export const MemoScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await StorageService.deleteMessage(memoId);
+              await StorageServiceV2.deleteMessage(memoId);
               loadMemos();
             } catch (error) {
               console.error('Error deleting memo:', error);

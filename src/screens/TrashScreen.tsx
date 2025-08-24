@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Message } from '../types/message';
-import { StorageService } from '../services/storageService';
+import { StorageServiceV2 } from '../services/storageServiceV2';
 import { useTheme } from '../contexts/ThemeContext';
 import { responsiveFontSize, SPACING } from '../styles/dimensions';
 
@@ -165,7 +165,7 @@ export const TrashScreen: React.FC = () => {
 
   const loadDeletedMemos = async () => {
     try {
-      const deleted = await StorageService.getDeletedMessages();
+      const deleted = await StorageServiceV2.getDeletedMessages();
       const deletedMemos = deleted
         .filter(msg => msg.isMemory)
         .sort((a, b) => {
@@ -193,7 +193,7 @@ export const TrashScreen: React.FC = () => {
           text: t('trash.restore'),
           onPress: async () => {
             try {
-              await StorageService.restoreMessage(memoId);
+              await StorageServiceV2.restoreMessage(memoId);
               loadDeletedMemos();
               Alert.alert(t('trash.restored'), t('trash.restoredMessage'));
             } catch (error) {
@@ -226,7 +226,7 @@ export const TrashScreen: React.FC = () => {
               // 2. 2초 후 실제로 삭제 실행
               setTimeout(async () => {
                 try {
-                  await StorageService.permanentlyDeleteMessage(memoId);
+                  await StorageServiceV2.permanentlyDeleteMessage(memoId);
                   setPermanentlyDeleting(prev => prev.filter(id => id !== memoId));
                   loadDeletedMemos();
                 } catch (deleteError) {
@@ -261,7 +261,7 @@ export const TrashScreen: React.FC = () => {
           onPress: async () => {
             try {
               for (const memo of deletedMemos) {
-                await StorageService.permanentlyDeleteMessage(memo.id);
+                await StorageServiceV2.permanentlyDeleteMessage(memo.id);
               }
               loadDeletedMemos();
               Alert.alert(t('trash.trashEmptied'), t('trash.trashEmptiedMessage'));

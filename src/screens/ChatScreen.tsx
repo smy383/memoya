@@ -14,12 +14,10 @@ import { Message } from '../types/message';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
 import { DateSeparator } from '../components/DateSeparator';
-import { StorageService } from '../services/storageService';
+import { StorageServiceV2 } from '../services/storageServiceV2';
 import { GeminiService } from '../services/geminiService';
 import { useTheme } from '../contexts/ThemeContext';
 import { SPACING } from '../styles/dimensions';
-
-const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
 
 type ChatItem = Message | { type: 'date-separator'; date: Date; id: string };
 
@@ -29,8 +27,11 @@ export const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [loadedMonths, setLoadedMonths] = useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const flatListRef = useRef<FlatList>(null);
-  const geminiService = useRef(new GeminiService(GEMINI_API_KEY));
+  const geminiService = useRef(new GeminiService());
 
   useEffect(() => {
     loadMessages();
@@ -44,9 +45,17 @@ export const ChatScreen: React.FC = () => {
 
   const loadMessages = async () => {
     try {
-      const savedMessages = await StorageService.getMessages();
+      // Migrate old storage format if needed
+      await StorageServiceV2.migrateFromOldStorage();
+      
+      const savedMessages = await StorageServiceV2.getMessagesWithPagination(1);
       setMessages(savedMessages);
       setChatItems(createChatItemsWithDateSeparators(savedMessages));
+      setLoadedMonths(1);
+      
+      // Check if there are more months available
+      const availableMonths = await StorageServiceV2.getAllAvailableMonths();
+      setHasMoreMessages(availableMonths.length > 1);
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -84,6 +93,34 @@ export const ChatScreen: React.FC = () => {
     }, 100);
   };
 
+  const loadOlderMessages = async () => {
+    if (loadingOlderMessages || !hasMoreMessages) return;
+
+    try {
+      setLoadingOlderMessages(true);
+      const nextMonthCount = loadedMonths + 1;
+      const allMessages = await StorageServiceV2.getMessagesWithPagination(nextMonthCount);
+      
+      // Check if we got more messages than before
+      if (allMessages.length > messages.length) {
+        setMessages(allMessages);
+        setChatItems(createChatItemsWithDateSeparators(allMessages));
+        setLoadedMonths(nextMonthCount);
+        
+        // Check if there are more months available
+        const availableMonths = await StorageServiceV2.getAllAvailableMonths();
+        setHasMoreMessages(availableMonths.length > nextMonthCount);
+      } else {
+        // No more messages to load
+        setHasMoreMessages(false);
+      }
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+    } finally {
+      setLoadingOlderMessages(false);
+    }
+  };
+
   const handleSendMessage = async (text: string, isMemory: boolean) => {
     const userMessage: Message = {
       id: uuid.v4() as string,
@@ -97,7 +134,7 @@ export const ChatScreen: React.FC = () => {
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setChatItems(createChatItemsWithDateSeparators(updatedMessages));
-      await StorageService.addMessage(userMessage);
+      await StorageServiceV2.addMessage(userMessage);
       scrollToBottom();
 
       if (!isMemory) {
@@ -124,7 +161,7 @@ export const ChatScreen: React.FC = () => {
           const finalMessages = [...updatedMessages, aiMessage];
           setMessages(finalMessages);
           setChatItems(createChatItemsWithDateSeparators(finalMessages));
-          await StorageService.addMessage(aiMessage);
+          await StorageServiceV2.addMessage(aiMessage);
           scrollToBottom();
         } catch (error) {
           console.error('Error getting AI response:', error);
@@ -144,6 +181,24 @@ export const ChatScreen: React.FC = () => {
       return <DateSeparator date={item.date} />;
     }
     return <MessageBubble message={item as Message} />;
+  };
+
+  const renderHeader = () => {
+    if (!hasMoreMessages) return null;
+    
+    return (
+      <View style={{ padding: SPACING.md, alignItems: 'center' }}>
+        {loadingOlderMessages ? (
+          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+            이전 메시지 불러오는 중...
+          </Text>
+        ) : (
+          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+            위로 스크롤하여 이전 메시지 보기
+          </Text>
+        )}
+      </View>
+    );
   };
 
   const styles = StyleSheet.create({
@@ -174,6 +229,18 @@ export const ChatScreen: React.FC = () => {
         style={styles.messagesList}
         contentContainerStyle={styles.messagesContainer}
         onLayout={scrollToBottom}
+        ListHeaderComponent={renderHeader}
+        onScroll={({ nativeEvent }) => {
+          // Check if user scrolled to top
+          if (nativeEvent.contentOffset.y <= 100 && hasMoreMessages && !loadingOlderMessages) {
+            loadOlderMessages();
+          }
+        }}
+        scrollEventThrottle={400}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 100,
+        }}
       />
       <ChatInput onSendMessage={handleSendMessage} loading={loading} />
     </KeyboardAvoidingView>
