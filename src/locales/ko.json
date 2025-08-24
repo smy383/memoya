@@ -1,0 +1,33 @@
+{
+  "navigation": {
+    "chat": "채팅",
+    "memo": "메모",
+    "settings": "설정"
+  },
+  "chat": {
+    "inputPlaceholder": "메시지를 입력하세요...",
+    "recordButton": "기록",
+    "chatButton": "채팅",
+    "sending": "전송중...",
+    "errorTitle": "오류",
+    "errorSending": "메시지 전송에 실패했습니다.",
+    "errorAI": "AI 응답을 받는데 실패했습니다. API 키를 확인해주세요.",
+    "errorStorage": "메시지 저장에 실패했습니다.",
+    "emptyMessage": "메시지를 입력해주세요."
+  },
+  "memo": {
+    "title": "메모",
+    "noMemos": "저장된 메모가 없습니다.",
+    "searchPlaceholder": "메모 검색..."
+  },
+  "settings": {
+    "title": "설정",
+    "theme": "테마",
+    "language": "언어",
+    "about": "정보",
+    "version": "버전",
+    "darkMode": "다크 모드",
+    "lightMode": "라이트 모드",
+    "systemMode": "시스템 설정"
+  }
+}

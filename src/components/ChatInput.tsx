@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../contexts/ThemeContext';
+import { responsiveFontSize, SPACING, wp } from '../styles/dimensions';
 
 interface ChatInputProps {
   onSendMessage: (text: string, isMemory: boolean) => Promise<void>;
@@ -15,10 +18,12 @@ interface ChatInputProps {
 
 export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = false }) => {
   const [text, setText] = useState('');
+  const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const handleSend = async (isMemory: boolean) => {
     if (text.trim() === '') {
-      Alert.alert('알림', '메시지를 입력해주세요.');
+      Alert.alert(t('chat.errorTitle'), t('chat.emptyMessage'));
       return;
     }
 
@@ -27,9 +32,56 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = f
       setText('');
     } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert('오류', '메시지 전송에 실패했습니다.');
+      Alert.alert(t('chat.errorTitle'), t('chat.errorSending'));
     }
   };
+
+  const styles = StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.borderLight,
+    },
+    inputContainer: {
+      marginBottom: SPACING.sm,
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: colors.borderLight,
+      borderRadius: 20,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      fontSize: responsiveFontSize(16),
+      maxHeight: 100,
+      textAlignVertical: 'top',
+      backgroundColor: colors.backgroundSecondary,
+      color: colors.text,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    button: {
+      flex: 1,
+      paddingVertical: SPACING.sm,
+      borderRadius: 20,
+      alignItems: 'center',
+      marginHorizontal: SPACING.xs,
+    },
+    memoButton: {
+      backgroundColor: colors.secondary,
+    },
+    chatButton: {
+      backgroundColor: colors.primary,
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      fontSize: responsiveFontSize(16),
+      fontWeight: '600',
+    },
+  });
 
   return (
     <View style={styles.container}>
@@ -38,7 +90,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = f
           style={styles.textInput}
           value={text}
           onChangeText={setText}
-          placeholder="메시지를 입력하세요..."
+          placeholder={t('chat.inputPlaceholder')}
+          placeholderTextColor={colors.textSecondary}
           multiline
           maxLength={1000}
           editable={!loading}
@@ -50,7 +103,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = f
           onPress={() => handleSend(true)}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>기록</Text>
+          <Text style={styles.buttonText}>{t('chat.recordButton')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, styles.chatButton]}
@@ -58,7 +111,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = f
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? '전송중...' : '채팅'}
+            {loading ? t('chat.sending') : t('chat.chatButton')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -66,47 +119,3 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, loading = f
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-  },
-  inputContainer: {
-    marginBottom: 8,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    maxHeight: 100,
-    textAlignVertical: 'top',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  memoButton: {
-    backgroundColor: '#34C759',
-  },
-  chatButton: {
-    backgroundColor: '#007AFF',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

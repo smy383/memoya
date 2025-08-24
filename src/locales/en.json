@@ -1,0 +1,33 @@
+{
+  "navigation": {
+    "chat": "Chat",
+    "memo": "Memo",
+    "settings": "Settings"
+  },
+  "chat": {
+    "inputPlaceholder": "Type a message...",
+    "recordButton": "Record",
+    "chatButton": "Chat",
+    "sending": "Sending...",
+    "errorTitle": "Error",
+    "errorSending": "Failed to send message.",
+    "errorAI": "Failed to get AI response. Please check your API key.",
+    "errorStorage": "Failed to save message.",
+    "emptyMessage": "Please enter a message."
+  },
+  "memo": {
+    "title": "Memo",
+    "noMemos": "No saved memos.",
+    "searchPlaceholder": "Search memos..."
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "language": "Language",
+    "about": "About",
+    "version": "Version",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemMode": "System Default"
+  }
+}

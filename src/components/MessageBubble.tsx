@@ -1,35 +1,41 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Message } from '../types/message';
+import { useTheme } from '../contexts/ThemeContext';
+import { responsiveFontSize, SPACING, wp } from '../styles/dimensions';
 
 interface MessageBubbleProps {
   message: Message;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+  const { colors } = useTheme();
+  
   const getBubbleStyle = () => {
+    const baseStyle = [styles.bubble];
     switch (message.type) {
       case 'user':
-        return [styles.bubble, styles.userBubble];
+        return [...baseStyle, { backgroundColor: colors.userBubble }];
       case 'ai':
-        return [styles.bubble, styles.aiBubble];
+        return [...baseStyle, { backgroundColor: colors.aiBubble }];
       case 'memo':
-        return [styles.bubble, styles.memoBubble];
+        return [...baseStyle, { backgroundColor: colors.memoBubble }];
       default:
-        return styles.bubble;
+        return baseStyle;
     }
   };
 
   const getTextStyle = () => {
+    const baseStyle = [styles.text];
     switch (message.type) {
       case 'user':
-        return styles.userText;
+        return [...baseStyle, { color: '#FFFFFF' }];
       case 'ai':
-        return styles.aiText;
+        return [...baseStyle, { color: colors.text }];
       case 'memo':
-        return styles.memoText;
+        return [...baseStyle, { color: '#FFFFFF' }];
       default:
-        return styles.defaultText;
+        return [...baseStyle, { color: colors.text }];
     }
   };
 
@@ -58,8 +64,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
-    marginHorizontal: 16,
+    marginVertical: SPACING.xs,
+    marginHorizontal: SPACING.md,
   },
   userContainer: {
     alignItems: 'flex-end',
@@ -68,8 +74,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   bubble: {
-    maxWidth: '80%',
-    padding: 12,
+    maxWidth: wp(80),
+    padding: SPACING.sm + SPACING.xs,
     borderRadius: 16,
     elevation: 1,
     shadowColor: '#000',
@@ -77,41 +83,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  userBubble: {
-    backgroundColor: '#007AFF',
-    borderBottomRightRadius: 4,
-  },
-  aiBubble: {
-    backgroundColor: '#E5E5EA',
-    borderBottomLeftRadius: 4,
-  },
-  memoBubble: {
-    backgroundColor: '#34C759',
-    borderBottomRightRadius: 4,
-  },
-  userText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  aiText: {
-    color: '#000000',
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  memoText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  defaultText: {
-    color: '#000000',
-    fontSize: 16,
+  text: {
+    fontSize: responsiveFontSize(16),
     lineHeight: 20,
   },
   timestamp: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: responsiveFontSize(12),
+    marginTop: SPACING.xs,
     opacity: 0.7,
     color: 'inherit',
   },

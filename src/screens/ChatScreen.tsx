@@ -7,16 +7,21 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import uuid from 'react-native-uuid';
 import { Message } from '../types/message';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
 import { StorageService } from '../services/storageService';
 import { GeminiService } from '../services/geminiService';
+import { useTheme } from '../contexts/ThemeContext';
+import { SPACING } from '../styles/dimensions';
 
 const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
 
 export const ChatScreen: React.FC = () => {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -83,20 +88,35 @@ export const ChatScreen: React.FC = () => {
           scrollToBottom();
         } catch (error) {
           console.error('Error getting AI response:', error);
-          Alert.alert('오류', 'AI 응답을 받는데 실패했습니다. API 키를 확인해주세요.');
+          Alert.alert(t('chat.errorTitle'), t('chat.errorAI'));
         }
         
         setLoading(false);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      Alert.alert('오류', '메시지 저장에 실패했습니다.');
+      Alert.alert(t('chat.errorTitle'), t('chat.errorStorage'));
     }
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
     <MessageBubble message={item} />
   );
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    messagesList: {
+      flex: 1,
+    },
+    messagesContainer: {
+      paddingVertical: SPACING.md,
+      flexGrow: 1,
+      justifyContent: 'flex-end',
+    },
+  });
 
   return (
     <KeyboardAvoidingView 
@@ -116,18 +136,3 @@ export const ChatScreen: React.FC = () => {
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F2F2F7',
-  },
-  messagesList: {
-    flex: 1,
-  },
-  messagesContainer: {
-    paddingVertical: 16,
-    flexGrow: 1,
-    justifyContent: 'flex-end',
-  },
-});

@@ -4,18 +4,31 @@
  */
 
 import React from 'react';
-import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
+import { StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ChatScreen } from './src/screens/ChatScreen';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
+import { TabNavigator } from './src/navigation/TabNavigator';
+import './src/locales/i18n';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+const AppContent: React.FC = () => {
+  const { isDark } = useTheme();
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ChatScreen />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <NavigationContainer>
+        <TabNavigator />
+      </NavigationContainer>
     </SafeAreaProvider>
+  );
+};
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 
