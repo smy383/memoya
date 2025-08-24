@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatScreen } from '../screens/ChatScreen';
 import { MemoScreen } from '../screens/MemoScreen';
-import { SettingsScreen } from '../screens/SettingsScreen';
+import { SettingsStackNavigator } from './SettingsStackNavigator';
 import { useTheme } from '../contexts/ThemeContext';
 import { responsiveFontSize, SPACING } from '../styles/dimensions';
 
@@ -88,7 +88,8 @@ export const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name={t('navigation.settings')} 
-        component={SettingsScreen}
+        component={SettingsStackNavigator}
+        options={{ headerShown: false }}
       />
     </Tab.Navigator>
   );

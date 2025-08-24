@@ -5,6 +5,9 @@ export interface Message {
   timestamp: Date;
   isMemory: boolean;
   isFavorite?: boolean;
+  isDeleted?: boolean;
+  deletedAt?: Date;
+  isPermanentlyDeleted?: boolean;
 }
 
 export type MessageType = 'user' | 'ai' | 'memo';

@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
 import { useTheme } from '../contexts/ThemeContext';
 import { ColorScheme } from '../styles/colors';
@@ -88,6 +89,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
 export const SettingsScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { colors, colorScheme, setColorScheme } = useTheme();
+  const navigation = useNavigation();
 
   const handleThemeChange = () => {
     Alert.alert(
@@ -192,6 +194,16 @@ export const SettingsScreen: React.FC = () => {
           title={t('settings.language')}
           value={getLanguageDisplayName(i18n.language)}
           onPress={handleLanguageChange}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          {t('settings.data')}
+        </Text>
+        <SettingItem
+          title={t('trash.title')}
+          onPress={() => navigation.navigate('Trash' as never)}
         />
       </View>
 

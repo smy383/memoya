@@ -31,10 +31,29 @@
     "title": "설정",
     "theme": "테마",
     "language": "언어",
+    "data": "데이터",
     "about": "정보",
     "version": "버전",
     "darkMode": "다크 모드",
     "lightMode": "라이트 모드",
     "systemMode": "시스템 설정"
+  },
+  "trash": {
+    "title": "휴지통",
+    "emptyTrash": "휴지통이 비어있습니다.",
+    "deletedAt": "삭제일:",
+    "restore": "복원",
+    "restoreConfirm": "이 메모를 복원하시겠습니까?",
+    "restored": "복원 완료",
+    "restoredMessage": "메모가 복원되었습니다.",
+    "restoreError": "메모 복원에 실패했습니다.",
+    "permanentDelete": "영구 삭제",
+    "permanentDeleteConfirm": "이 메모를 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "emptyTrash": "휴지통 비우기",
+    "emptyTrashConfirm": "휴지통의 모든 메모를 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "trashEmptied": "휴지통 비움 완료",
+    "trashEmptiedMessage": "휴지통이 비워졌습니다.",
+    "cancel": "취소",
+    "error": "오류"
   }
 }

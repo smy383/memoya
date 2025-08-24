@@ -31,10 +31,29 @@
     "title": "Settings",
     "theme": "Theme",
     "language": "Language",
+    "data": "Data",
     "about": "About",
     "version": "Version",
     "darkMode": "Dark Mode",
     "lightMode": "Light Mode",
     "systemMode": "System Default"
+  },
+  "trash": {
+    "title": "Trash",
+    "emptyTrash": "Trash is empty.",
+    "deletedAt": "Deleted:",
+    "restore": "Restore",
+    "restoreConfirm": "Are you sure you want to restore this memo?",
+    "restored": "Restored",
+    "restoredMessage": "Memo has been restored.",
+    "restoreError": "Failed to restore memo.",
+    "permanentDelete": "Delete Forever",
+    "permanentDeleteConfirm": "Are you sure you want to permanently delete this memo? This action cannot be undone.",
+    "emptyTrash": "Empty Trash",
+    "emptyTrashConfirm": "Are you sure you want to permanently delete all memos in trash? This action cannot be undone.",
+    "trashEmptied": "Trash Emptied",
+    "trashEmptiedMessage": "All memos have been permanently deleted.",
+    "cancel": "Cancel",
+    "error": "Error"
   }
 }

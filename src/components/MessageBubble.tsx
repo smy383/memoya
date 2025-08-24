@@ -13,29 +13,38 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   
   const getBubbleStyle = () => {
     const baseStyle = [styles.bubble];
+    const shadowStyle = (message.isDeleted || message.isPermanentlyDeleted) ? {
+      elevation: 0,
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      shadowColor: 'transparent'
+    } : {};
+    
     switch (message.type) {
       case 'user':
-        return [...baseStyle, { backgroundColor: colors.userBubble }];
+        return [...baseStyle, { backgroundColor: colors.userBubble }, shadowStyle];
       case 'ai':
-        return [...baseStyle, { backgroundColor: colors.aiBubble }];
+        return [...baseStyle, { backgroundColor: colors.aiBubble }, shadowStyle];
       case 'memo':
-        return [...baseStyle, { backgroundColor: colors.memoBubble }];
+        return [...baseStyle, { backgroundColor: colors.memoBubble }, shadowStyle];
       default:
-        return baseStyle;
+        return [...baseStyle, shadowStyle];
     }
   };
 
   const getTextStyle = () => {
     const baseStyle = [styles.text];
+    const deletedStyle = (message.isDeleted || message.isPermanentlyDeleted) ? { textDecorationLine: 'line-through' as const } : {};
+    
     switch (message.type) {
       case 'user':
-        return [...baseStyle, { color: '#FFFFFF' }];
+        return [...baseStyle, { color: '#FFFFFF' }, deletedStyle];
       case 'ai':
-        return [...baseStyle, { color: colors.text }];
+        return [...baseStyle, { color: colors.text }, deletedStyle];
       case 'memo':
-        return [...baseStyle, { color: '#FFFFFF' }];
+        return [...baseStyle, { color: '#FFFFFF' }, deletedStyle];
       default:
-        return [...baseStyle, { color: colors.text }];
+        return [...baseStyle, { color: colors.text }, deletedStyle];
     }
   };
 
@@ -49,13 +58,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <View style={[
       styles.container,
-      message.type === 'user' ? styles.userContainer : styles.otherContainer
+      message.type === 'user' ? styles.userContainer : styles.otherContainer,
+      { opacity: message.isPermanentlyDeleted ? 0.4 : 1.0 }
     ]}>
       <View style={getBubbleStyle()}>
         <Text style={getTextStyle()}>{message.text}</Text>
         <Text style={styles.timestamp}>
           {formatTime(message.timestamp)}
-          {message.isMemory && ' 📝'}
         </Text>
       </View>
     </View>

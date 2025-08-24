@@ -8,10 +8,12 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import uuid from 'react-native-uuid';
 import { Message } from '../types/message';
 import { MessageBubble } from '../components/MessageBubble';
 import { ChatInput } from '../components/ChatInput';
+import { DateSeparator } from '../components/DateSeparator';
 import { StorageService } from '../services/storageService';
 import { GeminiService } from '../services/geminiService';
 import { useTheme } from '../contexts/ThemeContext';
@@ -19,10 +21,13 @@ import { SPACING } from '../styles/dimensions';
 
 const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
 
+type ChatItem = Message | { type: 'date-separator'; date: Date; id: string };
+
 export const ChatScreen: React.FC = () => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chatItems, setChatItems] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const geminiService = useRef(new GeminiService(GEMINI_API_KEY));
@@ -31,13 +36,46 @@ export const ChatScreen: React.FC = () => {
     loadMessages();
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMessages();
+    }, [])
+  );
+
   const loadMessages = async () => {
     try {
       const savedMessages = await StorageService.getMessages();
       setMessages(savedMessages);
+      setChatItems(createChatItemsWithDateSeparators(savedMessages));
     } catch (error) {
       console.error('Error loading messages:', error);
     }
+  };
+
+  const createChatItemsWithDateSeparators = (messages: Message[]): ChatItem[] => {
+    if (messages.length === 0) return [];
+
+    const items: ChatItem[] = [];
+    let currentDate: string | null = null;
+
+    messages.forEach((message) => {
+      const messageDate = new Date(message.timestamp);
+      const dateString = messageDate.toDateString();
+
+      // 날짜가 바뀌면 구분선 추가
+      if (currentDate !== dateString) {
+        items.push({
+          type: 'date-separator',
+          date: messageDate,
+          id: `date-${dateString}`
+        });
+        currentDate = dateString;
+      }
+
+      items.push(message);
+    });
+
+    return items;
   };
 
   const scrollToBottom = () => {
@@ -58,6 +96,7 @@ export const ChatScreen: React.FC = () => {
     try {
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
+      setChatItems(createChatItemsWithDateSeparators(updatedMessages));
       await StorageService.addMessage(userMessage);
       scrollToBottom();
 
@@ -84,6 +123,7 @@ export const ChatScreen: React.FC = () => {
 
           const finalMessages = [...updatedMessages, aiMessage];
           setMessages(finalMessages);
+          setChatItems(createChatItemsWithDateSeparators(finalMessages));
           await StorageService.addMessage(aiMessage);
           scrollToBottom();
         } catch (error) {
@@ -99,9 +139,12 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <MessageBubble message={item} />
-  );
+  const renderChatItem = ({ item }: { item: ChatItem }) => {
+    if ('type' in item && item.type === 'date-separator') {
+      return <DateSeparator date={item.date} />;
+    }
+    return <MessageBubble message={item as Message} />;
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -125,9 +168,9 @@ export const ChatScreen: React.FC = () => {
     >
       <FlatList
         ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
+        data={chatItems}
+        renderItem={renderChatItem}
+        keyExtractor={(item) => 'id' in item ? item.id : `date-${item.date.toDateString()}`}
         style={styles.messagesList}
         contentContainerStyle={styles.messagesContainer}
         onLayout={scrollToBottom}

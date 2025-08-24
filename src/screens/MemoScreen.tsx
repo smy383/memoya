@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Message } from '../types/message';
 import { StorageService } from '../services/storageService';
@@ -159,6 +160,12 @@ export const MemoScreen: React.FC = () => {
     loadMemos();
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadMemos();
+    }, [])
+  );
+
   useEffect(() => {
     filterMemos();
   }, [memos, searchQuery]);
@@ -166,7 +173,7 @@ export const MemoScreen: React.FC = () => {
   const loadMemos = async () => {
     try {
       const messages = await StorageService.getMessages();
-      const memoMessages = messages.filter(msg => msg.isMemory);
+      const memoMessages = messages.filter(msg => msg.isMemory && !msg.isDeleted);
       // Sort by favorites first, then by date (newest first)
       memoMessages.sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1;
