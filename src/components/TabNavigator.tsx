@@ -66,7 +66,7 @@ const TabNavigator: React.FC = () => {
         component={ChatScreen}
         options={{
           title: t('tabs.chat'),
-          headerTitle: t('tabs.chat'),
+          headerShown: false,
         }}
       />
       <Tab.Screen
