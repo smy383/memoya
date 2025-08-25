@@ -7,14 +7,25 @@ import {
   Switch,
   Alert,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
+import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+
+type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
 const SettingsScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme, isDark, toggleTheme } = useTheme();
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
+
+  const openTrash = () => {
+    navigation.navigate('Trash');
+  };
 
   const changeLanguage = () => {
     const newLang = i18n.language === 'ko' ? 'en' : 'ko';
@@ -88,6 +99,12 @@ const SettingsScreen: React.FC = () => {
       color: theme.colors.textSecondary,
       textAlign: 'center',
     },
+    settingLabelWithIcon: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+      gap: theme.spacing.sm,
+    },
   });
 
   return (
@@ -110,6 +127,16 @@ const SettingsScreen: React.FC = () => {
 
         <Text style={styles.sectionTitle}>General</Text>
         <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={openTrash}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="trash-outline" size={20} color={theme.colors.textSecondary} />
+              <Text style={styles.settingLabel}>휴지통</Text>
+            </View>
+            <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.settingItem, styles.lastSettingItem]}
             onPress={changeLanguage}

@@ -32,3 +32,8 @@ export type RootTabParamList = {
   Memos: undefined;
   Settings: undefined;
 };
+
+export type RootStackParamList = {
+  Main: undefined;
+  Trash: undefined;
+};

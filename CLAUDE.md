@@ -10,14 +10,17 @@ MemoApp is a React Native CLI-based mobile application designed as an on-device 
 
 ### Building and Running
 ```bash
-# Start Metro bundler
+# Start Metro bundler (required before running app)
 npm start
 
-# Run on Android
+# Run on Android (starts emulator if needed)
 npm run android
 
-# Run on iOS
+# Run on iOS (requires CocoaPods setup)
 npm run ios
+
+# Clean rebuild (if experiencing cache issues)
+npm start -- --reset-cache
 
 # Lint code
 npm run lint
@@ -26,8 +29,16 @@ npm run lint
 npm run test
 ```
 
-### Android Development
-The project is primarily Android-focused. Vector icons are configured in `android/app/build.gradle` with the react-native-vector-icons setup.
+### Troubleshooting Common Issues
+- **Metro port conflicts**: Kill existing processes with `lsof -ti:8081 | xargs kill -9`
+- **Module resolution errors**: Delete `node_modules` and `package-lock.json`, then `npm install`
+- **Android build issues**: Ensure emulator is running and vector icons are configured
+
+### Android Development Focus
+The project is Android-focused with vector icons configured in `android/app/build.gradle`. The app uses:
+- React Native 0.81.0
+- TypeScript with strict typing
+- Node.js >=18 requirement
 
 ## Architecture Overview
 
@@ -108,3 +119,23 @@ i18n configured with:
 ### Future AI Integration
 
 The "Chat" functionality is architected to accept external API integration while maintaining the on-device data model. Only the chat feature will require network connectivity.
+
+## Development Notes
+
+### Key Dependencies
+- **@react-navigation/bottom-tabs**: Tab-based navigation system
+- **@react-native-async-storage/async-storage**: Local data persistence
+- **react-i18next + react-native-localize**: Internationalization with device detection
+- **react-native-vector-icons**: Icon system (Ionicons configured)
+- **react-native-safe-area-context**: Safe area handling for modern devices
+
+### Critical Development Patterns
+- **AsyncStorage Operations**: All data operations use try/catch with error logging
+- **Theme Context Usage**: Components access theme via `useTheme()` hook, styles defined within component functions
+- **Translation Keys**: Follow semantic naming (e.g., `chat.placeholder`, `settings.darkMode`)
+- **Responsive Design**: Use `isTablet` boolean and `getResponsiveFontSize()` for adaptive layouts
+
+### Testing and Debugging
+- JavaScript logs available in React Native DevTools (type `j` in Metro terminal)
+- Use Android-first development approach
+- Hot reload enabled by default for rapid development

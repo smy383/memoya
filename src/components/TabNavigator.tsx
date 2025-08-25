@@ -1,17 +1,20 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '../contexts/ThemeContext';
-import { RootTabParamList } from '../types';
+import { RootTabParamList, RootStackParamList } from '../types';
 import ChatScreen from '../screens/ChatScreen';
 import MemosScreen from '../screens/MemosScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import TrashScreen from '../screens/TrashScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
-const TabNavigator: React.FC = () => {
+const MainTabNavigator: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
 
@@ -86,6 +89,28 @@ const TabNavigator: React.FC = () => {
         }}
       />
     </Tab.Navigator>
+  );
+};
+
+const TabNavigator: React.FC = () => {
+  const { theme } = useTheme();
+
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="Main" 
+        component={MainTabNavigator}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Trash" 
+        component={TrashScreen}
+        options={{ 
+          headerShown: false,
+          presentation: 'modal',
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 
