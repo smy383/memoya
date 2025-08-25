@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -24,11 +24,102 @@ interface ChatMessage {
   type: 'user' | 'ai' | 'record';
 }
 
+interface ChatListItem {
+  id: string;
+  type: 'message' | 'dateSeparator';
+  message?: ChatMessage;
+  date?: string;
+}
+
 const ChatScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
+
+  useEffect(() => {
+    loadChatMessages();
+  }, []);
+
+  useEffect(() => {
+    groupMessagesByDate();
+  }, [chatMessages]);
+
+  const formatDate = (date: Date): string => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    
+    const isToday = date.toDateString() === today.toDateString();
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    
+    if (isToday) {
+      return '오늘';
+    } else if (isYesterday) {
+      return '어제';
+    } else {
+      const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const weekday = weekdays[date.getDay()];
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${weekday}`;
+    }
+  };
+
+  const groupMessagesByDate = () => {
+    if (chatMessages.length === 0) {
+      setChatListData([]);
+      return;
+    }
+
+    const grouped: ChatListItem[] = [];
+    let currentDate = '';
+
+    chatMessages.forEach((message, index) => {
+      const messageDate = message.timestamp.toDateString();
+      
+      if (messageDate !== currentDate) {
+        currentDate = messageDate;
+        grouped.push({
+          id: `date-${messageDate}`,
+          type: 'dateSeparator',
+          date: formatDate(message.timestamp),
+        });
+      }
+      
+      grouped.push({
+        id: message.id,
+        type: 'message',
+        message,
+      });
+    });
+
+    setChatListData(grouped);
+  };
+
+  const loadChatMessages = async () => {
+    try {
+      const savedMessages = await AsyncStorage.getItem('chatMessages');
+      if (savedMessages) {
+        const parsedMessages: ChatMessage[] = JSON.parse(savedMessages);
+        // timestamp를 Date 객체로 변환
+        const messagesWithDates = parsedMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }));
+        setChatMessages(messagesWithDates);
+      }
+    } catch (error) {
+      console.error('Error loading chat messages:', error);
+    }
+  };
+
+  const saveChatMessages = async (messages: ChatMessage[]) => {
+    try {
+      await AsyncStorage.setItem('chatMessages', JSON.stringify(messages));
+    } catch (error) {
+      console.error('Error saving chat messages:', error);
+    }
+  };
 
   const handleRecord = async () => {
     if (!message.trim()) return;
@@ -40,7 +131,11 @@ const ChatScreen: React.FC = () => {
       type: 'record',
     };
 
-    setChatMessages(prev => [...prev, newMessage]);
+    const updatedMessages = [...chatMessages, newMessage];
+    setChatMessages(updatedMessages);
+    
+    // 채팅 메시지 저장
+    await saveChatMessages(updatedMessages);
 
     try {
       const newMemo: Memo = {
@@ -61,7 +156,7 @@ const ChatScreen: React.FC = () => {
     }
   };
 
-  const handleChat = () => {
+  const handleChat = async () => {
     if (!message.trim()) return;
 
     const newMessage: ChatMessage = {
@@ -71,16 +166,29 @@ const ChatScreen: React.FC = () => {
       type: 'user',
     };
 
-    setChatMessages(prev => [...prev, newMessage]);
+    const updatedMessages = [...chatMessages, newMessage];
+    setChatMessages(updatedMessages);
+    
+    // 채팅 메시지 저장
+    await saveChatMessages(updatedMessages);
+    
     setMessage('');
     
     // TODO: AI 응답 구현
     Alert.alert('AI Chat', 'AI chat feature coming soon!');
   };
 
-  const renderChatMessage = ({ item }: { item: ChatMessage }) => {
-    const isUser = item.type === 'user';
-    const isRecord = item.type === 'record';
+  const renderDateSeparator = (date: string) => (
+    <View style={styles.dateSeparatorContainer}>
+      <View style={styles.dateSeparatorLine} />
+      <Text style={styles.dateSeparatorText}>{date}</Text>
+      <View style={styles.dateSeparatorLine} />
+    </View>
+  );
+
+  const renderChatMessage = (message: ChatMessage) => {
+    const isUser = message.type === 'user';
+    const isRecord = message.type === 'record';
     const isRightAligned = isUser || isRecord;
     
     return (
@@ -93,17 +201,25 @@ const ChatScreen: React.FC = () => {
             styles.messageText, 
             isRecord ? styles.recordText : (isUser ? styles.userText : styles.aiText)
           ]}>
-            {item.content}
+            {message.content}
           </Text>
           <Text style={[
             styles.messageTime, 
             isRecord ? styles.recordTime : (isUser ? styles.userTime : styles.aiTime)
           ]}>
-            {item.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+            {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
       </View>
     );
+  };
+
+  const renderChatListItem = ({ item }: { item: ChatListItem }) => {
+    if (item.type === 'dateSeparator') {
+      return renderDateSeparator(item.date!);
+    } else {
+      return renderChatMessage(item.message!);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -172,6 +288,23 @@ const ChatScreen: React.FC = () => {
     aiTime: {
       color: theme.colors.textSecondary,
     },
+    dateSeparatorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: theme.spacing.md,
+      paddingHorizontal: theme.spacing.md,
+    },
+    dateSeparatorLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.colors.border,
+    },
+    dateSeparatorText: {
+      marginHorizontal: theme.spacing.sm,
+      fontSize: getResponsiveFontSize(12),
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
     inputContainer: {
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
@@ -223,8 +356,8 @@ const ChatScreen: React.FC = () => {
       >
         <FlatList
           style={styles.chatContainer}
-          data={chatMessages}
-          renderItem={renderChatMessage}
+          data={chatListData}
+          renderItem={renderChatListItem}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           inverted={false}
