@@ -2,221 +2,135 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  ScrollView,
+  TouchableOpacity,
+  Switch,
   Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
-import DeviceInfo from 'react-native-device-info';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
-import { ColorScheme } from '../styles/colors';
-import { responsiveFontSize, SPACING, wp } from '../styles/dimensions';
+import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 
-interface SettingItemProps {
-  title: string;
-  value?: string;
-  onPress?: () => void;
-  showArrow?: boolean;
-}
-
-const SettingItem: React.FC<SettingItemProps> = ({ 
-  title, 
-  value, 
-  onPress, 
-  showArrow = true 
-}) => {
-  const { colors } = useTheme();
-  
-  const itemStyles = StyleSheet.create({
-    settingItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.borderLight,
-      backgroundColor: colors.surface,
-    },
-    settingTitle: {
-      fontSize: responsiveFontSize(16),
-      flex: 1,
-      color: colors.text,
-    },
-    settingValue: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    settingValueText: {
-      fontSize: responsiveFontSize(16),
-      marginRight: SPACING.sm,
-      color: colors.textSecondary,
-    },
-    arrow: {
-      fontSize: responsiveFontSize(16),
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-  });
-  
-  return (
-    <TouchableOpacity
-      style={itemStyles.settingItem}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <Text style={itemStyles.settingTitle}>
-        {title}
-      </Text>
-      <View style={itemStyles.settingValue}>
-        {value && (
-          <Text style={itemStyles.settingValueText}>
-            {value}
-          </Text>
-        )}
-        {showArrow && onPress && (
-          <Text style={itemStyles.arrow}>
-            →
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-export const SettingsScreen: React.FC = () => {
+const SettingsScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { colors, colorScheme, setColorScheme } = useTheme();
-  const navigation = useNavigation();
+  const { theme, isDark, toggleTheme } = useTheme();
 
-  const handleThemeChange = () => {
-    Alert.alert(
-      t('settings.theme'),
-      '',
-      [
-        {
-          text: t('settings.lightMode'),
-          onPress: () => setColorScheme('light'),
-        },
-        {
-          text: t('settings.darkMode'),
-          onPress: () => setColorScheme('dark'),
-        },
-        {
-          text: t('settings.systemMode'),
-          onPress: () => setColorScheme('system'),
-        },
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-      ]
-    );
-  };
-
-  const handleLanguageChange = () => {
+  const changeLanguage = () => {
+    const newLang = i18n.language === 'ko' ? 'en' : 'ko';
+    
     Alert.alert(
       t('settings.language'),
-      '',
+      `Change language to ${newLang === 'ko' ? '한국어' : 'English'}?`,
       [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '한국어',
-          onPress: () => i18n.changeLanguage('ko'),
-        },
-        {
-          text: 'English',
-          onPress: () => i18n.changeLanguage('en'),
-        },
-        {
-          text: '취소',
-          style: 'cancel',
+          text: t('common.confirm'),
+          onPress: async () => {
+            await i18n.changeLanguage(newLang);
+            await AsyncStorage.setItem('selectedLanguage', newLang);
+          },
         },
       ]
     );
-  };
-
-  const getThemeDisplayName = (scheme: ColorScheme) => {
-    switch (scheme) {
-      case 'light':
-        return t('settings.lightMode');
-      case 'dark':
-        return t('settings.darkMode');
-      case 'system':
-        return t('settings.systemMode');
-      default:
-        return t('settings.systemMode');
-    }
-  };
-
-  const getLanguageDisplayName = (languageCode: string) => {
-    switch (languageCode) {
-      case 'ko':
-        return '한국어';
-      case 'en':
-        return 'English';
-      default:
-        return 'English';
-    }
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: theme.colors.background,
+    },
+    content: {
+      padding: theme.spacing.md,
     },
     section: {
-      marginVertical: SPACING.sm,
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius,
+      marginBottom: theme.spacing.md,
+      overflow: 'hidden',
+    },
+    settingItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    lastSettingItem: {
+      borderBottomWidth: 0,
+    },
+    settingLabel: {
+      fontSize: getResponsiveFontSize(16),
+      color: theme.colors.text,
+      flex: 1,
+    },
+    settingValue: {
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
     },
     sectionTitle: {
-      fontSize: responsiveFontSize(14),
+      fontSize: getResponsiveFontSize(18),
       fontWeight: '600',
-      color: colors.textSecondary,
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.sm,
-      textTransform: 'uppercase',
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+      marginTop: theme.spacing.lg,
+    },
+    appName: {
+      fontSize: getResponsiveFontSize(24),
+      fontWeight: '700',
+      color: theme.colors.primary,
+      textAlign: 'center',
+      marginVertical: theme.spacing.xl,
+    },
+    version: {
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
+      textAlign: 'center',
     },
   });
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          {t('settings.title')}
-        </Text>
-        <SettingItem
-          title={t('settings.theme')}
-          value={getThemeDisplayName(colorScheme)}
-          onPress={handleThemeChange}
-        />
-        <SettingItem
-          title={t('settings.language')}
-          value={getLanguageDisplayName(i18n.language)}
-          onPress={handleLanguageChange}
-        />
-      </View>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.appName}>MemoApp</Text>
+        
+        <Text style={styles.sectionTitle}>Appearance</Text>
+        <View style={styles.section}>
+          <View style={[styles.settingItem, styles.lastSettingItem]}>
+            <Text style={styles.settingLabel}>{t('settings.darkMode')}</Text>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={isDark ? '#FFFFFF' : '#FFFFFF'}
+            />
+          </View>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          {t('settings.data')}
-        </Text>
-        <SettingItem
-          title={t('trash.title')}
-          onPress={() => navigation.navigate('Trash' as never)}
-        />
-      </View>
+        <Text style={styles.sectionTitle}>General</Text>
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.settingItem, styles.lastSettingItem]}
+            onPress={changeLanguage}
+          >
+            <Text style={styles.settingLabel}>{t('settings.language')}</Text>
+            <Text style={styles.settingValue}>
+              {i18n.language === 'ko' ? '한국어' : 'English'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          {t('settings.about')}
-        </Text>
-        <SettingItem
-          title={t('settings.version')}
-          value={DeviceInfo.getVersion()}
-          showArrow={false}
-        />
+        <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+        <View style={styles.section}>
+          <View style={[styles.settingItem, styles.lastSettingItem]}>
+            <Text style={styles.settingLabel}>{t('settings.version')}</Text>
+            <Text style={styles.settingValue}>1.0.0</Text>
+          </View>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 };
+
+export default SettingsScreen;

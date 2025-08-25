@@ -1,0 +1,33 @@
+{
+  "tabs": {
+    "chat": "채팅",
+    "memos": "메모",
+    "settings": "설정"
+  },
+  "chat": {
+    "placeholder": "메시지를 입력하세요...",
+    "record": "기록",
+    "chat": "채팅",
+    "recordSuccess": "메모가 성공적으로 저장되었습니다!"
+  },
+  "memos": {
+    "title": "내 메모",
+    "empty": "메모가 없습니다",
+    "searchPlaceholder": "메모 검색..."
+  },
+  "settings": {
+    "title": "설정",
+    "darkMode": "다크모드",
+    "language": "언어",
+    "about": "정보",
+    "version": "버전"
+  },
+  "common": {
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "edit": "편집",
+    "save": "저장",
+    "search": "검색"
+  }
+}

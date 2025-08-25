@@ -1,248 +1,135 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  FlatList,
+  Text,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
+  Alert,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
-import uuid from 'react-native-uuid';
-import { Message } from '../types/message';
-import { MessageBubble } from '../components/MessageBubble';
-import { ChatInput } from '../components/ChatInput';
-import { DateSeparator } from '../components/DateSeparator';
-import { StorageServiceV2 } from '../services/storageServiceV2';
-import { GeminiService } from '../services/geminiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
-import { SPACING } from '../styles/dimensions';
+import { Memo } from '../types';
+import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 
-type ChatItem = Message | { type: 'date-separator'; date: Date; id: string };
-
-export const ChatScreen: React.FC = () => {
+const ChatScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { colors } = useTheme();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [chatItems, setChatItems] = useState<ChatItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
-  const [loadedMonths, setLoadedMonths] = useState(1);
-  const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  const flatListRef = useRef<FlatList>(null);
-  const geminiService = useRef(new GeminiService());
+  const { theme } = useTheme();
+  const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    loadMessages();
-  }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadMessages();
-    }, [])
-  );
-
-  const loadMessages = async () => {
-    try {
-      // Migrate old storage format if needed
-      await StorageServiceV2.migrateFromOldStorage();
-      
-      const savedMessages = await StorageServiceV2.getMessagesWithPagination(1);
-      setMessages(savedMessages);
-      setChatItems(createChatItemsWithDateSeparators(savedMessages));
-      setLoadedMonths(1);
-      
-      // Check if there are more months available
-      const availableMonths = await StorageServiceV2.getAllAvailableMonths();
-      setHasMoreMessages(availableMonths.length > 1);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
-
-  const createChatItemsWithDateSeparators = (messages: Message[]): ChatItem[] => {
-    if (messages.length === 0) return [];
-
-    const items: ChatItem[] = [];
-    let currentDate: string | null = null;
-
-    messages.forEach((message) => {
-      const messageDate = new Date(message.timestamp);
-      const dateString = messageDate.toDateString();
-
-      // 날짜가 바뀌면 구분선 추가
-      if (currentDate !== dateString) {
-        items.push({
-          type: 'date-separator',
-          date: messageDate,
-          id: `date-${dateString}`
-        });
-        currentDate = dateString;
-      }
-
-      items.push(message);
-    });
-
-    return items;
-  };
-
-  const scrollToBottom = () => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  const loadOlderMessages = async () => {
-    if (loadingOlderMessages || !hasMoreMessages) return;
+  const handleRecord = async () => {
+    if (!message.trim()) return;
 
     try {
-      setLoadingOlderMessages(true);
-      const nextMonthCount = loadedMonths + 1;
-      const allMessages = await StorageServiceV2.getMessagesWithPagination(nextMonthCount);
+      const newMemo: Memo = {
+        id: Date.now().toString(),
+        content: message.trim(),
+        timestamp: new Date(),
+      };
+
+      const existingMemos = await AsyncStorage.getItem('memos');
+      const memos = existingMemos ? JSON.parse(existingMemos) : [];
       
-      // Check if we got more messages than before
-      if (allMessages.length > messages.length) {
-        setMessages(allMessages);
-        setChatItems(createChatItemsWithDateSeparators(allMessages));
-        setLoadedMonths(nextMonthCount);
-        
-        // Check if there are more months available
-        const availableMonths = await StorageServiceV2.getAllAvailableMonths();
-        setHasMoreMessages(availableMonths.length > nextMonthCount);
-      } else {
-        // No more messages to load
-        setHasMoreMessages(false);
-      }
+      memos.unshift(newMemo);
+      await AsyncStorage.setItem('memos', JSON.stringify(memos));
+      
+      setMessage('');
+      Alert.alert('', t('chat.recordSuccess'));
     } catch (error) {
-      console.error('Error loading older messages:', error);
-    } finally {
-      setLoadingOlderMessages(false);
+      console.error('Error saving memo:', error);
     }
   };
 
-  const handleSendMessage = async (text: string, isMemory: boolean) => {
-    const userMessage: Message = {
-      id: uuid.v4() as string,
-      text,
-      type: isMemory ? 'memo' : 'user',
-      timestamp: new Date(),
-      isMemory,
-    };
-
-    try {
-      const updatedMessages = [...messages, userMessage];
-      setMessages(updatedMessages);
-      setChatItems(createChatItemsWithDateSeparators(updatedMessages));
-      await StorageServiceV2.addMessage(userMessage);
-      scrollToBottom();
-
-      if (!isMemory) {
-        setLoading(true);
-        
-        try {
-          const chatHistory = messages
-            .filter(m => m.type !== 'memo')
-            .map(m => m.text);
-          
-          const aiResponse = await geminiService.current.generateChatResponse(
-            chatHistory,
-            text
-          );
-
-          const aiMessage: Message = {
-            id: uuid.v4() as string,
-            text: aiResponse,
-            type: 'ai',
-            timestamp: new Date(),
-            isMemory: false,
-          };
-
-          const finalMessages = [...updatedMessages, aiMessage];
-          setMessages(finalMessages);
-          setChatItems(createChatItemsWithDateSeparators(finalMessages));
-          await StorageServiceV2.addMessage(aiMessage);
-          scrollToBottom();
-        } catch (error) {
-          console.error('Error getting AI response:', error);
-          Alert.alert(t('chat.errorTitle'), t('chat.errorAI'));
-        }
-        
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      Alert.alert(t('chat.errorTitle'), t('chat.errorStorage'));
-    }
-  };
-
-  const renderChatItem = ({ item }: { item: ChatItem }) => {
-    if ('type' in item && item.type === 'date-separator') {
-      return <DateSeparator date={item.date} />;
-    }
-    return <MessageBubble message={item as Message} />;
-  };
-
-  const renderHeader = () => {
-    if (!hasMoreMessages) return null;
-    
-    return (
-      <View style={{ padding: SPACING.md, alignItems: 'center' }}>
-        {loadingOlderMessages ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-            이전 메시지 불러오는 중...
-          </Text>
-        ) : (
-          <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-            위로 스크롤하여 이전 메시지 보기
-          </Text>
-        )}
-      </View>
-    );
+  const handleChat = () => {
+    if (!message.trim()) return;
+    Alert.alert('AI Chat', 'AI chat feature coming soon!');
+    setMessage('');
   };
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: theme.colors.background,
     },
-    messagesList: {
+    content: {
       flex: 1,
+      padding: theme.spacing.md,
     },
-    messagesContainer: {
-      paddingVertical: SPACING.md,
-      flexGrow: 1,
-      justifyContent: 'flex-end',
+    inputContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.borderRadius,
+      padding: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      minHeight: isTablet ? 200 : 150,
+    },
+    textInput: {
+      flex: 1,
+      fontSize: getResponsiveFontSize(16),
+      color: theme.colors.text,
+      textAlignVertical: 'top',
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: theme.spacing.md,
+    },
+    button: {
+      flex: 1,
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadius,
+      padding: theme.spacing.md,
+      alignItems: 'center',
+    },
+    recordButton: {
+      backgroundColor: theme.colors.accent,
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      fontSize: getResponsiveFontSize(16),
+      fontWeight: '600',
     },
   });
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <FlatList
-        ref={flatListRef}
-        data={chatItems}
-        renderItem={renderChatItem}
-        keyExtractor={(item) => 'id' in item ? item.id : `date-${item.date.toDateString()}`}
-        style={styles.messagesList}
-        contentContainerStyle={styles.messagesContainer}
-        onLayout={scrollToBottom}
-        ListHeaderComponent={renderHeader}
-        onScroll={({ nativeEvent }) => {
-          // Check if user scrolled to top
-          if (nativeEvent.contentOffset.y <= 100 && hasMoreMessages && !loadingOlderMessages) {
-            loadOlderMessages();
-          }
-        }}
-        scrollEventThrottle={400}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 100,
-        }}
-      />
-      <ChatInput onSendMessage={handleSendMessage} loading={loading} />
+      <View style={styles.content}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder={t('chat.placeholder')}
+            placeholderTextColor={theme.colors.textSecondary}
+            value={message}
+            onChangeText={setMessage}
+            multiline
+          />
+        </View>
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.recordButton]}
+            onPress={handleRecord}
+          >
+            <Text style={styles.buttonText}>{t('chat.record')}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleChat}
+          >
+            <Text style={styles.buttonText}>{t('chat.chat')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 };
+
+export default ChatScreen;

@@ -1,0 +1,33 @@
+{
+  "tabs": {
+    "chat": "Chat",
+    "memos": "Memos",
+    "settings": "Settings"
+  },
+  "chat": {
+    "placeholder": "Type your message...",
+    "record": "Record",
+    "chat": "Chat",
+    "recordSuccess": "Memo saved successfully!"
+  },
+  "memos": {
+    "title": "My Memos",
+    "empty": "No memos yet",
+    "searchPlaceholder": "Search memos..."
+  },
+  "settings": {
+    "title": "Settings",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "about": "About",
+    "version": "Version"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "search": "Search"
+  }
+}

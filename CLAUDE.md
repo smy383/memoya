@@ -4,142 +4,107 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Memoya is a React Native TypeScript app that provides an AI-powered chat-based memo service. The app operates primarily on-device with only AI API calls to Google Gemini for chat functionality. All user data is stored locally using AsyncStorage.
+MemoApp is a React Native CLI-based mobile application designed as an on-device chat-style memo app. The app operates entirely offline with local storage, except for AI chat features which will use external APIs.
 
 ## Development Commands
 
-### Basic Commands
+### Building and Running
 ```bash
 # Start Metro bundler
 npm start
 
-# Build and run on Android
+# Run on Android
 npm run android
 
-# Build and run on iOS (requires CocoaPods setup)
-bundle install                 # First time only
-bundle exec pod install        # After native deps changes
+# Run on iOS
 npm run ios
 
 # Lint code
 npm run lint
 
 # Run tests
-npm test
+npm run test
 ```
 
-### Development Workflow
-- Metro runs in background on port 8081
-- Hot reload is enabled by default
-- Force reload: R+R (Android) or R (iOS Simulator)
-- Access dev menu: Ctrl+M (Android) or Cmd+M (iOS)
+### Android Development
+The project is primarily Android-focused. Vector icons are configured in `android/app/build.gradle` with the react-native-vector-icons setup.
 
 ## Architecture Overview
 
-### Core Architecture Principles
-1. **On-device First**: All data stored locally except AI API calls
-2. **Internationalization**: All text must be localized (Korean/English)
-3. **Responsive Design**: Support phones (320-414px) and tablets (768-1024px)
-4. **Theme System**: Light/Dark mode with system detection
-5. **TypeScript**: Strict typing throughout
+### Core Structure
+- **On-device first**: All user data stored locally using AsyncStorage
+- **No backend dependency**: Operates completely offline except for AI features
+- **Multi-language support**: Korean/English with device locale detection
+- **Responsive design**: Supports both phone and tablet layouts
 
-### Key Components Structure
+### Key Architectural Patterns
 
-**Navigation**: Bottom tab navigation with 3 main screens
-- Chat: AI conversation + memo recording
-- Memo: View and search saved memos
-- Settings: Theme, language, app info
+**Context-based State Management**: 
+- `ThemeContext` manages dark/light mode with AsyncStorage persistence
+- i18n initialization handles language preference with fallbacks
 
-**Context Providers**:
-- `ThemeProvider`: Manages light/dark mode and color schemes
-- i18n integration: Automatic language detection with manual override
+**Navigation Structure**:
+- Bottom tab navigation with three main screens: Chat, Memos, Settings
+- React Navigation v6 with TypeScript type safety via `RootTabParamList`
 
 **Data Flow**:
-- Messages stored via `StorageService` (AsyncStorage wrapper)
-- AI responses via `GeminiService` (Google Generative AI)
-- All operations maintain separation between memos and chat
+- Memos stored in AsyncStorage as JSON array
+- Theme preferences persisted to AsyncStorage
+- Language settings saved with react-native-localize integration
+- All data operations are async with error handling
 
-### Design System
+### Screen Responsibilities
 
-**Responsive Utilities** (`src/styles/dimensions.ts`):
-- `wp(percentage)`: Width-based responsive sizing
-- `hp(percentage)`: Height-based responsive sizing
-- `responsiveFontSize(size)`: Adaptive font scaling
-- `SPACING`: Consistent spacing system
+**ChatScreen**: Primary interface with text input and dual-action buttons (Record/Chat)
+- "Record" saves to local memos immediately
+- "Chat" reserved for future AI API integration
 
-**Color System** (`src/styles/colors.ts`):
-- `LIGHT_COLORS` / `DARK_COLORS`: Complete theme definitions
-- `getColors(scheme, systemScheme)`: Dynamic color resolution
-- Automatic system theme detection
+**MemosScreen**: Displays local memos with search and delete functionality
+- Real-time search filtering
+- Date/time sorting with Korean locale formatting
+- Long-press to delete with confirmation
 
-**Typography & Icons**:
-- Vector icons via react-native-vector-icons (Ionicons)
-- Responsive font sizing across device types
+**SettingsScreen**: Manages app-level preferences
+- Theme toggle with immediate visual feedback
+- Language switching with AsyncStorage persistence
+- App version display
 
-### API Integration
+### Styling System
 
-**Google Gemini Setup**:
-- API key required in `src/screens/ChatScreen.tsx:20`
-- Uses `gemini-pro` model for chat responses
-- Context-aware conversations with message history
+**Theme Architecture**:
+- Centralized theme objects in `utils/theme.ts` (light/dark variants)
+- Responsive utilities in `utils/dimensions.ts` for tablet/phone adaptations
+- Color tokens and spacing system for consistency
 
-## Development Rules
+**Responsive Design**:
+- `isTablet` detection based on screen width (>=768px)
+- `getResponsiveFontSize()` scales typography
+- Dynamic layout adjustments throughout components
 
-### Code Organization
+### Data Persistence Strategy
+
+All app data uses AsyncStorage with these keys:
+- `memos`: JSON array of memo objects
+- `isDarkMode`: Boolean theme preference
+- `selectedLanguage`: String language code
+
+Memo objects structure:
+```typescript
+interface Memo {
+  id: string;
+  content: string;
+  timestamp: Date;
+}
 ```
-src/
-├── components/      # Reusable UI components
-├── contexts/        # React contexts (Theme)
-├── locales/         # i18n translations (ko.json, en.json)
-├── navigation/      # Navigation setup
-├── screens/         # Main app screens
-├── services/        # Business logic (Storage, AI)
-├── styles/          # Design system
-└── types/           # TypeScript definitions
-```
 
-### Critical Development Guidelines
+### Internationalization
 
-**Styling Requirements**:
-- Use theme-aware colors via `useTheme()` hook
-- Apply responsive dimensions using utility functions
-- Define styles within component functions to access theme context
-- Never hardcode colors or dimensions
+i18n configured with:
+- Device locale detection via react-native-localize
+- Fallback to English for unsupported locales
+- JSON translation files in `src/i18n/locales/`
+- AsyncStorage persistence of user language choice
 
-**Internationalization**:
-- All user-facing text via `useTranslation()` hook
-- Add new strings to both `ko.json` and `en.json`
-- Use semantic keys (e.g., `chat.inputPlaceholder`)
+### Future AI Integration
 
-**State Management**:
-- Local component state for UI interactions
-- AsyncStorage for persistent data
-- Theme context for global theme state
-- No external state management (Redux/Zustand)
-
-**Message Types**:
-- `user`: User input for AI chat
-- `ai`: AI responses
-- `memo`: User content marked for memorization
-- All messages have `isMemory` boolean flag
-
-### Testing & Quality
-
-The project uses standard React Native testing setup with Jest. Always ensure new features maintain the established patterns for responsive design, theming, and internationalization.
-
-### Critical Integration Points
-
-**Google Gemini API**:
-- Requires valid API key configuration
-- Error handling for API failures
-- Context management for conversation flow
-
-**AsyncStorage**:
-- JSON serialization for complex data
-- Error handling for storage operations  
-- Date deserialization on retrieval
-
-**Vector Icons**:
-- Auto-linked via React Native CLI
-- Ionicons as primary icon set
-- Responsive sizing via design system
+The "Chat" functionality is architected to accept external API integration while maintaining the on-device data model. Only the chat feature will require network connectivity.
