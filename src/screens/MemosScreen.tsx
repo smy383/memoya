@@ -91,8 +91,9 @@ const MemosScreen: React.FC = () => {
     <TouchableOpacity
       style={styles.memoItem}
       onLongPress={() => confirmDelete(item.id)}
+      activeOpacity={0.7}
     >
-      <Text style={styles.memoContent} numberOfLines={3}>
+      <Text style={styles.memoContent} numberOfLines={2}>
         {item.content}
       </Text>
       <Text style={styles.memoDate}>
@@ -123,19 +124,16 @@ const MemosScreen: React.FC = () => {
       flex: 1,
     },
     memoItem: {
-      backgroundColor: theme.colors.surface,
-      margin: theme.spacing.sm,
-      marginHorizontal: theme.spacing.md,
-      padding: theme.spacing.md,
-      borderRadius: theme.borderRadius,
-      borderLeftWidth: 3,
-      borderLeftColor: theme.colors.primary,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
     },
     memoContent: {
-      fontSize: getResponsiveFontSize(14),
+      fontSize: getResponsiveFontSize(15),
       color: theme.colors.text,
-      lineHeight: getResponsiveFontSize(20),
-      marginBottom: theme.spacing.sm,
+      lineHeight: getResponsiveFontSize(22),
+      marginBottom: theme.spacing.xs,
     },
     memoDate: {
       fontSize: getResponsiveFontSize(12),
