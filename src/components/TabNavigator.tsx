@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '../contexts/ThemeContext';
 import { RootTabParamList, RootStackParamList } from '../types';
-import ChatScreen from '../screens/ChatScreen';
+import ChatScreenRefactored from '../screens/ChatScreenRefactored';
 import MemosScreen from '../screens/MemosScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TrashScreen from '../screens/TrashScreen';
@@ -66,7 +66,7 @@ const MainTabNavigator: React.FC = () => {
     >
       <Tab.Screen
         name="Chat"
-        component={ChatScreen}
+        component={ChatScreenRefactored}
         options={{
           title: t('tabs.chat'),
           headerShown: false,

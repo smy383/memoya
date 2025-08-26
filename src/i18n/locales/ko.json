@@ -62,6 +62,8 @@
     "analyzing": "AI가 요청을 분석중입니다...",
     "searchingMemos": "메모를 검색하고 있습니다...",
     "analyzingStats": "메모 통계를 분석중입니다...",
+    "generatingSummary": "메모 요약을 생성하고 있습니다...",
+    "extractingTasks": "할일 항목을 추출하고 있습니다...",
     "generatingResponse": "답변을 생성하고 있습니다..."
   },
   "weekdays": ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
