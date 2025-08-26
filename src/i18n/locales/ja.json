@@ -58,5 +58,11 @@
     "error": "AI応答の処理中にエラーが発生しました。",
     "aiError": "AIエラー"
   },
+  "ai": {
+    "analyzing": "AIがリクエストを分析中です...",
+    "searchingMemos": "メモを検索中です...",
+    "analyzingStats": "メモ統計を分析中です...",
+    "generatingResponse": "回答を生成中です..."
+  },
   "weekdays": ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
 }

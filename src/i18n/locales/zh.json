@@ -58,5 +58,11 @@
     "error": "处理AI响应时发生错误。",
     "aiError": "AI错误"
   },
+  "ai": {
+    "analyzing": "AI正在分析您的请求...",
+    "searchingMemos": "正在搜索备忘录...",
+    "analyzingStats": "正在分析备忘录统计...",
+    "generatingResponse": "正在生成回答..."
+  },
   "weekdays": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
 }

@@ -58,5 +58,11 @@
     "error": "Ocurrió un error al procesar la respuesta de IA.",
     "aiError": "Error de IA"
   },
+  "ai": {
+    "analyzing": "La IA está analizando tu solicitud...",
+    "searchingMemos": "Buscando memos...",
+    "analyzingStats": "Analizando estadísticas de memos...",
+    "generatingResponse": "Generando respuesta..."
+  },
   "weekdays": ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 }

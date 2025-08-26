@@ -58,5 +58,11 @@
     "error": "Ein Fehler ist bei der Verarbeitung der KI-Antwort aufgetreten.",
     "aiError": "KI-Fehler"
   },
+  "ai": {
+    "analyzing": "KI analysiert Ihre Anfrage...",
+    "searchingMemos": "Notizen werden gesucht...",
+    "analyzingStats": "Notiz-Statistiken werden analysiert...",
+    "generatingResponse": "Antwort wird generiert..."
+  },
   "weekdays": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 }

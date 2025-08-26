@@ -58,5 +58,11 @@
     "error": "An error occurred while processing AI response.",
     "aiError": "AI Error"
   },
+  "ai": {
+    "analyzing": "AI is analyzing your request...",
+    "searchingMemos": "Searching memos...",
+    "analyzingStats": "Analyzing memo statistics...",
+    "generatingResponse": "Generating response..."
+  },
   "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }
