@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,7 @@ const ChatScreen: React.FC = () => {
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadChatMessages();
@@ -67,6 +68,15 @@ const ChatScreen: React.FC = () => {
   useEffect(() => {
     groupMessagesByDate();
   }, [chatMessages]);
+
+  useEffect(() => {
+    // 새 메시지가 추가되면 하단으로 스크롤
+    if (chatListData.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [chatListData.length]);
 
   const formatDate = (date: Date): string => {
     const today = new Date();
@@ -532,6 +542,7 @@ ${memoList}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <FlatList
+          ref={flatListRef}
           style={styles.chatContainer}
           data={chatListData}
           renderItem={renderChatListItem}
