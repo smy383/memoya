@@ -1,0 +1,62 @@
+{
+  "tabs": {
+    "chat": "聊天",
+    "memos": "备忘录",
+    "settings": "设置"
+  },
+  "chat": {
+    "placeholder": "请输入消息...",
+    "record": "记录",
+    "chat": "聊天",
+    "recordSuccess": "备忘录保存成功！"
+  },
+  "memos": {
+    "title": "我的备忘录",
+    "empty": "暂无备忘录",
+    "searchPlaceholder": "搜索备忘录..."
+  },
+  "settings": {
+    "title": "设置",
+    "darkMode": "深色模式",
+    "language": "语言",
+    "about": "关于",
+    "version": "版本"
+  },
+  "common": {
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "save": "保存",
+    "search": "搜索",
+    "restore": "恢复",
+    "success": "成功",
+    "error": "错误",
+    "today": "今天",
+    "yesterday": "昨天",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "回收站",
+    "empty": "回收站为空。",
+    "restoreConfirm": "是否要恢复此备忘录？",
+    "deleteConfirm": "是否要永久删除此备忘录？\n已删除的备忘录无法恢复。",
+    "restoreSuccess": "备忘录已恢复。",
+    "permanentDelete": "永久删除"
+  },
+  "modal": {
+    "memoTitle": "备忘录",
+    "titlePlaceholder": "请输入标题",
+    "contentPlaceholder": "请输入内容"
+  },
+  "api": {
+    "error": "处理AI响应时发生错误。",
+    "aiError": "AI错误"
+  },
+  "weekdays": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
+}

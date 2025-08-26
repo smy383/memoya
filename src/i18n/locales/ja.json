@@ -1,0 +1,62 @@
+{
+  "tabs": {
+    "chat": "チャット",
+    "memos": "メモ",
+    "settings": "設定"
+  },
+  "chat": {
+    "placeholder": "メッセージを入力してください...",
+    "record": "記録",
+    "chat": "チャット",
+    "recordSuccess": "メモが正常に保存されました！"
+  },
+  "memos": {
+    "title": "マイメモ",
+    "empty": "メモがありません",
+    "searchPlaceholder": "メモを検索..."
+  },
+  "settings": {
+    "title": "設定",
+    "darkMode": "ダークモード",
+    "language": "言語",
+    "about": "について",
+    "version": "バージョン"
+  },
+  "common": {
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "save": "保存",
+    "search": "検索",
+    "restore": "復元",
+    "success": "成功",
+    "error": "エラー",
+    "today": "今日",
+    "yesterday": "昨日",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "ゴミ箱",
+    "empty": "ゴミ箱は空です。",
+    "restoreConfirm": "このメモを復元しますか？",
+    "deleteConfirm": "このメモを完全に削除しますか？\n削除されたメモは復元できません。",
+    "restoreSuccess": "メモが復元されました。",
+    "permanentDelete": "完全削除"
+  },
+  "modal": {
+    "memoTitle": "メモ",
+    "titlePlaceholder": "タイトルを入力してください",
+    "contentPlaceholder": "内容を入力してください"
+  },
+  "api": {
+    "error": "AI応答の処理中にエラーが発生しました。",
+    "aiError": "AIエラー"
+  },
+  "weekdays": ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
+}

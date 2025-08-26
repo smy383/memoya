@@ -28,6 +28,35 @@
     "delete": "Delete",
     "edit": "Edit",
     "save": "Save",
-    "search": "Search"
-  }
+    "search": "Search",
+    "restore": "Restore",
+    "success": "Success",
+    "error": "Error",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "Trash",
+    "empty": "Trash is empty.",
+    "restoreConfirm": "Do you want to restore this memo?",
+    "deleteConfirm": "Do you want to permanently delete this memo?\nDeleted memos cannot be recovered.",
+    "restoreSuccess": "Memo has been restored.",
+    "permanentDelete": "Delete Permanently"
+  },
+  "modal": {
+    "memoTitle": "Memo",
+    "titlePlaceholder": "Enter title",
+    "contentPlaceholder": "Enter content"
+  },
+  "api": {
+    "error": "An error occurred while processing AI response.",
+    "aiError": "AI Error"
+  },
+  "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }

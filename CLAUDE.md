@@ -45,7 +45,7 @@ The project is Android-focused with vector icons configured in `android/app/buil
 ### Core Structure
 - **On-device first**: All user data stored locally using AsyncStorage
 - **No backend dependency**: Operates completely offline except for AI features
-- **Multi-language support**: Korean/English with device locale detection
+- **Multi-language support**: 6 languages (Korean, English, Japanese, Chinese, Spanish, German) with device locale detection
 - **Responsive design**: Supports both phone and tablet layouts
 
 ### Key Architectural Patterns
@@ -110,7 +110,24 @@ interface Memo {
 
 ### Internationalization
 
-i18n configured with:
+**CRITICAL RULE**: All user-facing text MUST support all 6 languages. NO hardcoded text allowed.
+
+**Supported Languages**:
+- Korean (ko) - 한국어
+- English (en) - English  
+- Japanese (ja) - 日本語
+- Chinese (zh) - 中文
+- Spanish (es) - Español
+- German (de) - Deutsch
+
+**Implementation Requirements**:
+- ALL new features must include translations for all 6 languages
+- NO hardcoded strings - use `t('translation.key')` exclusively
+- Translation files must be updated simultaneously: `ko.json`, `en.json`, `ja.json`, `zh.json`, `es.json`, `de.json`
+- Language switching follows circular pattern: ko → en → ja → zh → es → de → ko
+- Device locale detection supports all 6 languages with English fallback
+
+**i18n Configuration**:
 - Device locale detection via react-native-localize
 - Fallback to English for unsupported locales
 - JSON translation files in `src/i18n/locales/`

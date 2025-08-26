@@ -387,16 +387,16 @@ const MemosScreen: React.FC = () => {
                 onPress={closeMemoModal}
               >
                 <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
-                  취소
+                  {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>메모</Text>
+              <Text style={styles.modalTitle}>{t('modal.memoTitle')}</Text>
               <TouchableOpacity 
                 style={styles.modalButton}
                 onPress={saveMemo}
               >
                 <Text style={[styles.modalButtonText, { color: theme.colors.primary }]}>
-                  저장
+                  {t('common.save')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -404,14 +404,14 @@ const MemosScreen: React.FC = () => {
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <TextInput
                 style={styles.titleInput}
-                placeholder="제목을 입력하세요"
+                placeholder={t('modal.titlePlaceholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 value={editTitle}
                 onChangeText={setEditTitle}
               />
               <TextInput
                 style={styles.contentInput}
-                placeholder="내용을 입력하세요"
+                placeholder={t('modal.contentPlaceholder')}
                 placeholderTextColor={theme.colors.textSecondary}
                 value={editContent}
                 onChangeText={setEditContent}

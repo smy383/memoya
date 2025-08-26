@@ -56,11 +56,11 @@ const ChatScreen: React.FC = () => {
     const isYesterday = date.toDateString() === yesterday.toDateString();
     
     if (isToday) {
-      return '오늘';
+      return t('common.today');
     } else if (isYesterday) {
-      return '어제';
+      return t('common.yesterday');
     } else {
-      const weekdays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const weekdays = t('weekdays');
       const weekday = weekdays[date.getDay()];
       return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${weekday}`;
     }
@@ -213,11 +213,11 @@ const ChatScreen: React.FC = () => {
         setChatMessages(updatedMessagesWithAI);
         await saveChatMessages(updatedMessagesWithAI);
       } else {
-        throw new Error(data.error?.message || 'API 응답 오류');
+        throw new Error(data.error?.message || t('api.error'));
       }
     } catch (error) {
       console.error('Gemini API error:', error);
-      Alert.alert('AI 오류', 'AI 응답 처리 중 오류가 발생했습니다.');
+      Alert.alert(t('api.aiError'), t('api.error'));
     }
   };
 

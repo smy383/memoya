@@ -1,0 +1,62 @@
+{
+  "tabs": {
+    "chat": "Chat",
+    "memos": "Notas",
+    "settings": "Configuración"
+  },
+  "chat": {
+    "placeholder": "Escribe tu mensaje...",
+    "record": "Grabar",
+    "chat": "Chat",
+    "recordSuccess": "¡Nota guardada con éxito!"
+  },
+  "memos": {
+    "title": "Mis Notas",
+    "empty": "No hay notas aún",
+    "searchPlaceholder": "Buscar notas..."
+  },
+  "settings": {
+    "title": "Configuración",
+    "darkMode": "Modo Oscuro",
+    "language": "Idioma",
+    "about": "Acerca de",
+    "version": "Versión"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "search": "Buscar",
+    "restore": "Restaurar",
+    "success": "Éxito",
+    "error": "Error",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "Papelera",
+    "empty": "La papelera está vacía.",
+    "restoreConfirm": "¿Deseas restaurar esta nota?",
+    "deleteConfirm": "¿Deseas eliminar permanentemente esta nota?\nLas notas eliminadas no se pueden recuperar.",
+    "restoreSuccess": "La nota ha sido restaurada.",
+    "permanentDelete": "Eliminar Permanentemente"
+  },
+  "modal": {
+    "memoTitle": "Nota",
+    "titlePlaceholder": "Introduce el título",
+    "contentPlaceholder": "Introduce el contenido"
+  },
+  "api": {
+    "error": "Ocurrió un error al procesar la respuesta de IA.",
+    "aiError": "Error de IA"
+  },
+  "weekdays": ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
+}

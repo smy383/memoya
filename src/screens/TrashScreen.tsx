@@ -70,7 +70,7 @@ const TrashScreen: React.FC = () => {
       await AsyncStorage.setItem('trashedMemos', JSON.stringify(updatedTrashedMemos));
       setTrashedMemos(updatedTrashedMemos);
 
-      Alert.alert('', '메모가 복구되었습니다.');
+      Alert.alert('', t('trash.restoreSuccess'));
     } catch (error) {
       console.error('Error restoring memo:', error);
     }
@@ -89,10 +89,10 @@ const TrashScreen: React.FC = () => {
   const confirmRestore = (id: string) => {
     Alert.alert(
       '',
-      '이 메모를 복구하시겠습니까?',
+      t('trash.restoreConfirm'),
       [
-        { text: '취소', style: 'cancel' },
-        { text: '복구', onPress: () => restoreMemo(id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.restore'), onPress: () => restoreMemo(id) },
       ]
     );
   };
@@ -100,10 +100,10 @@ const TrashScreen: React.FC = () => {
   const confirmPermanentDelete = (id: string) => {
     Alert.alert(
       '',
-      '이 메모를 영구적으로 삭제하시겠습니까?\n삭제된 메모는 복구할 수 없습니다.',
+      t('trash.deleteConfirm'),
       [
-        { text: '취소', style: 'cancel' },
-        { text: '완전 삭제', onPress: () => permanentlyDeleteMemo(id), style: 'destructive' },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('trash.permanentDelete'), onPress: () => permanentlyDeleteMemo(id), style: 'destructive' },
       ]
     );
   };
@@ -221,7 +221,7 @@ const TrashScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>휴지통</Text>
+        <Text style={styles.headerTitle}>{t('trash.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
       
@@ -242,7 +242,7 @@ const TrashScreen: React.FC = () => {
             style={styles.emptyIcon}
           />
           <Text style={styles.emptyText}>
-            휴지통이 비어있습니다.
+            {t('trash.empty')}
           </Text>
         </View>
       )}

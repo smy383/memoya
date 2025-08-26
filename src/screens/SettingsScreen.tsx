@@ -29,11 +29,22 @@ const SettingsScreen: React.FC = () => {
   };
 
   const changeLanguage = () => {
-    const newLang = i18n.language === 'ko' ? 'en' : 'ko';
+    const languages = ['ko', 'en', 'ja', 'zh', 'es', 'de'];
+    const languageNames = {
+      ko: t('common.korean'),
+      en: t('common.english'), 
+      ja: t('common.japanese'),
+      zh: t('common.chinese'),
+      es: t('common.spanish'),
+      de: t('common.german')
+    };
+    
+    const currentIndex = languages.indexOf(i18n.language);
+    const newLang = languages[(currentIndex + 1) % languages.length];
     
     Alert.alert(
       t('settings.language'),
-      `Change language to ${newLang === 'ko' ? '한국어' : 'English'}?`,
+      `Change language to ${languageNames[newLang as keyof typeof languageNames]}?`,
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -112,7 +123,7 @@ const SettingsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.appName}>MemoApp</Text>
+        <Text style={styles.appName}>Memoya</Text>
         
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.section}>
@@ -135,7 +146,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="trash-outline" size={20} color={theme.colors.textSecondary} />
-              <Text style={styles.settingLabel}>휴지통</Text>
+              <Text style={styles.settingLabel}>{t('trash.title')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -145,7 +156,14 @@ const SettingsScreen: React.FC = () => {
           >
             <Text style={styles.settingLabel}>{t('settings.language')}</Text>
             <Text style={styles.settingValue}>
-              {i18n.language === 'ko' ? '한국어' : 'English'}
+              {
+                i18n.language === 'ko' ? t('common.korean') :
+                i18n.language === 'ja' ? t('common.japanese') :
+                i18n.language === 'zh' ? t('common.chinese') :
+                i18n.language === 'es' ? t('common.spanish') :
+                i18n.language === 'de' ? t('common.german') :
+                t('common.english')
+              }
             </Text>
           </TouchableOpacity>
         </View>

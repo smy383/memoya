@@ -1,0 +1,62 @@
+{
+  "tabs": {
+    "chat": "Chat",
+    "memos": "Notizen",
+    "settings": "Einstellungen"
+  },
+  "chat": {
+    "placeholder": "Nachricht eingeben...",
+    "record": "Aufnehmen",
+    "chat": "Chat",
+    "recordSuccess": "Notiz erfolgreich gespeichert!"
+  },
+  "memos": {
+    "title": "Meine Notizen",
+    "empty": "Noch keine Notizen",
+    "searchPlaceholder": "Notizen durchsuchen..."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "darkMode": "Dunkler Modus",
+    "language": "Sprache",
+    "about": "Über",
+    "version": "Version"
+  },
+  "common": {
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "search": "Suchen",
+    "restore": "Wiederherstellen",
+    "success": "Erfolg",
+    "error": "Fehler",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "Papierkorb",
+    "empty": "Der Papierkorb ist leer.",
+    "restoreConfirm": "Möchten Sie diese Notiz wiederherstellen?",
+    "deleteConfirm": "Möchten Sie diese Notiz dauerhaft löschen?\nGelöschte Notizen können nicht wiederhergestellt werden.",
+    "restoreSuccess": "Die Notiz wurde wiederhergestellt.",
+    "permanentDelete": "Dauerhaft Löschen"
+  },
+  "modal": {
+    "memoTitle": "Notiz",
+    "titlePlaceholder": "Titel eingeben",
+    "contentPlaceholder": "Inhalt eingeben"
+  },
+  "api": {
+    "error": "Ein Fehler ist bei der Verarbeitung der KI-Antwort aufgetreten.",
+    "aiError": "KI-Fehler"
+  },
+  "weekdays": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
+}

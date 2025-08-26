@@ -28,6 +28,35 @@
     "delete": "삭제",
     "edit": "편집",
     "save": "저장",
-    "search": "검색"
-  }
+    "search": "검색",
+    "restore": "복구",
+    "success": "성공",
+    "error": "오류",
+    "today": "오늘",
+    "yesterday": "어제",
+    "korean": "한국어",
+    "english": "English",
+    "japanese": "日本語",
+    "chinese": "中文",
+    "spanish": "Español",
+    "german": "Deutsch"
+  },
+  "trash": {
+    "title": "휴지통",
+    "empty": "휴지통이 비어있습니다.",
+    "restoreConfirm": "이 메모를 복구하시겠습니까?",
+    "deleteConfirm": "이 메모를 영구적으로 삭제하시겠습니까?\n삭제된 메모는 복구할 수 없습니다.",
+    "restoreSuccess": "메모가 복구되었습니다.",
+    "permanentDelete": "완전 삭제"
+  },
+  "modal": {
+    "memoTitle": "메모",
+    "titlePlaceholder": "제목을 입력하세요",
+    "contentPlaceholder": "내용을 입력하세요"
+  },
+  "api": {
+    "error": "AI 응답 처리 중 오류가 발생했습니다.",
+    "aiError": "AI 오류"
+  },
+  "weekdays": ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
 }
