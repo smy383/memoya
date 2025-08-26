@@ -21,7 +21,29 @@
     "language": "Language",
     "selectLanguage": "Select Language",
     "about": "About",
-    "version": "Version"
+    "version": "Version",
+    "appearance": "Appearance",
+    "general": "General",
+    "dataManagementTitle": "Data Management",
+    "dataManagement": {
+      "storedDataPrefix": "Stored Data:",
+      "itemsCount": " items",
+      "objectType": "object",
+      "storedDataTitle": "Check Stored Data",
+      "checkDataError": "An error occurred while checking data.",
+      "testRoomTitle": "Test Chat Room",
+      "testRoomSuccess": "Test chat room has been saved.",
+      "testRoomError": "An error occurred while saving test data.",
+      "resetAllTitle": "⚠️ Delete All Data",
+      "resetAllMessage": "Are you sure you want to delete all data?\\n\\n🚨 Warning:\\n• All chat rooms will be deleted\\n• All messages will be deleted\\n• All memos will be deleted\\n• Trash data will also be deleted\\n• Deleted data cannot be recovered\\n\\nYou need to restart the app.",
+      "resetAllConfirm": "Delete All Data",
+      "resetComplete": "Complete",
+      "resetCompleteMessage": "All data has been deleted.\\nPlease restart the app.",
+      "resetError": "An error occurred while deleting data.",
+      "checkStoredData": "Check Stored Data",
+      "saveTestRoom": "Save Test Chat Room",
+      "deleteAllData": "Delete All Data"
+    }
   },
   "common": {
     "cancel": "Cancel",
@@ -37,6 +59,7 @@
     "saving": "Saving...",
     "today": "Today",
     "yesterday": "Yesterday",
+    "daysAgo": "{{days}} days ago",
     "korean": "한국어",
     "english": "English",
     "japanese": "日本語",
@@ -65,7 +88,52 @@
     "analyzing": "AI is analyzing your request...",
     "searchingMemos": "Searching memos...",
     "analyzingStats": "Analyzing memo statistics...",
-    "generatingResponse": "Generating response..."
+    "generatingSummary": "Generating memo summary...",
+    "extractingTasks": "Extracting task items...",
+    "generatingResponse": "Generating response...",
+    "tools": {
+      "searchMemos": {
+        "description": "Search user's memos with various conditions. Search by date, keyword, or time period.",
+        "keyword": "Keyword to search (optional). Finds memos containing this keyword in their content.",
+        "dateFrom": "Search start date (YYYY-MM-DD format, optional)",
+        "dateTo": "Search end date (YYYY-MM-DD format, optional)",
+        "month": "Search specific month (YYYY-MM format, optional). e.g., '2025-08'",
+        "limit": "Maximum number of memos to return (default: 10)",
+        "found": "Found {{count}} memo(s).",
+        "error": "An error occurred while searching memos."
+      },
+      "getStats": {
+        "description": "Get user's memo statistics. Provides information such as total memo count, date distribution, etc.",
+        "statsType": "Statistics type (one of: total_count, monthly_distribution, recent_activity)",
+        "totalCount": "You have a total of {{count}} memo(s).",
+        "monthlyDistribution": "Retrieved monthly memo distribution.",
+        "recentActivity": "Here are the recent {{count}} memo(s).",
+        "error": "An error occurred while retrieving memo statistics."
+      },
+      "generateSummary": {
+        "description": "Summarize user's memos. Extract key content from memos filtered by specific time period or keywords to generate concise summaries.",
+        "dateFrom": "Start date of memos to summarize (YYYY-MM-DD, optional)",
+        "dateTo": "End date of memos to summarize (YYYY-MM-DD, optional)",
+        "month": "Summarize specific month (YYYY-MM format, optional). e.g., '2025-08'",
+        "keyword": "Summarize only memos related to specific keyword (optional)",
+        "summaryLength": "Summary length setting",
+        "noMemos": "No memos match the specified conditions.",
+        "noMemosMessage": "Cannot generate summary as no memos match the conditions.",
+        "success": "Generated summary of {{count}} memo(s).",
+        "error": "An error occurred while generating summary."
+      },
+      "extractTasks": {
+        "description": "Extract tasks or action items from user's memos. Recognizes patterns like 'need to do', 'should do', 'TODO', etc., to find action items.",
+        "dateFrom": "Start date of memos to extract tasks from (YYYY-MM-DD, optional)",
+        "dateTo": "End date of memos to extract tasks from (YYYY-MM-DD, optional)",
+        "keyword": "Extract only tasks related to specific keyword (optional)",
+        "success": "Found {{taskCount}} task(s) from {{memoCount}} memo(s).",
+        "error": "An error occurred while extracting tasks."
+      },
+      "executeError": "An error occurred while executing tool: {{error}}",
+      "unknownTool": "Unknown tool: {{toolName}}"
+    },
+    "systemPrompt": "You are a friendly and helpful memo assistant. \n- Use the provided tools only when you need information to answer questions about the user's memos\n- For general conversations, greetings, and questions unrelated to memos, respond naturally without using tools\n- Provide concise and helpful responses in English"
   },
   "chatRooms": {
     "title": "Chat Rooms",
@@ -78,8 +146,9 @@
     "edit": "Edit",
     "delete": "Delete",
     "editNotImplemented": "Edit feature coming soon.",
-    "deleteConfirmTitle": "Delete Chat Room",
-    "deleteConfirmMessage": "Are you sure you want to delete \"{{title}}\" chat room? All messages and memos will be deleted.",
+    "deleteConfirmTitle": "⚠️ Permanently Delete Chat Room",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{title}}\" chat room?\\n\\n🚨 Warning:\\n• All chat messages will be deleted\\n• All memos will be deleted\\n• Trash memos will also be deleted\\n• Deleted data cannot be recovered\\n\\nAre you sure you want to delete?",
+    "permanentDelete": "Permanently Delete",
     "deleteError": "Error occurred while deleting chat room.",
     "createError": "Error occurred while creating new chat room.",
     "cannotDeleteLastRoom": "Cannot delete the last chat room.",
@@ -87,7 +156,11 @@
     "roomName": "Room Name",
     "roomNamePlaceholder": "Enter room name",
     "emptyTitleError": "Please enter a room name.",
-    "editError": "Error occurred while editing room name."
+    "editError": "Error occurred while editing room name.",
+    "titleLengthError": "Room name must be 50 characters or less.",
+    "createNewRoom": "Create New Chat Room",
+    "creating": "Creating...",
+    "create": "Create"
   },
   "weekdays": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 }

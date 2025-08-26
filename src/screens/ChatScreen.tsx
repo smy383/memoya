@@ -97,42 +97,42 @@ const ChatScreen: React.FC = () => {
     return [
       {
         name: "search_memos",
-        description: "사용자의 메모를 다양한 조건으로 검색합니다. 날짜별, 키워드별, 기간별 검색이 가능합니다.",
+        description: t('ai.tools.searchMemos.description'),
         parameters: {
           type: "object",
           properties: {
             keyword: {
               type: "string",
-              description: "검색할 키워드 (선택사항). 메모 내용에서 해당 키워드를 포함한 메모를 찾습니다."
+              description: t('ai.tools.searchMemos.keyword')
             },
             date_from: {
               type: "string", 
-              description: "검색 시작 날짜 (YYYY-MM-DD 형식, 선택사항)"
+              description: t('ai.tools.searchMemos.dateFrom')
             },
             date_to: {
               type: "string",
-              description: "검색 종료 날짜 (YYYY-MM-DD 형식, 선택사항)"
+              description: t('ai.tools.searchMemos.dateTo')
             },
             month: {
               type: "string",
-              description: "특정 월 검색 (YYYY-MM 형식, 선택사항). 예: '2025-08'"
+              description: t('ai.tools.searchMemos.month')
             },
             limit: {
               type: "number",
-              description: "반환할 최대 메모 개수 (기본값: 10)"
+              description: t('ai.tools.searchMemos.limit')
             }
           }
         }
       },
       {
         name: "get_memo_stats",
-        description: "사용자의 메모 통계 정보를 가져옵니다. 전체 메모 개수, 날짜별 분포 등의 정보를 제공합니다.",
+        description: t('ai.tools.getStats.description'),
         parameters: {
           type: "object",
           properties: {
             type: {
               type: "string",
-              description: "통계 유형 (total_count, monthly_distribution, recent_activity 중 하나)",
+              description: t('ai.tools.getStats.statsType'),
               enum: ["total_count", "monthly_distribution", "recent_activity"]
             }
           },
@@ -141,29 +141,29 @@ const ChatScreen: React.FC = () => {
       },
       {
         name: "generate_summary",
-        description: "사용자의 메모들을 요약합니다. 특정 기간이나 키워드로 필터링된 메모들의 핵심 내용을 추출하여 간결한 요약을 생성합니다.",
+        description: t('ai.tools.generateSummary.description'),
         parameters: {
           type: "object",
           properties: {
             date_from: {
               type: "string",
-              description: "요약할 메모의 시작 날짜 (YYYY-MM-DD, 선택사항)"
+              description: t('ai.tools.generateSummary.dateFrom')
             },
             date_to: {
               type: "string", 
-              description: "요약할 메모의 종료 날짜 (YYYY-MM-DD, 선택사항)"
+              description: t('ai.tools.generateSummary.dateTo')
             },
             month: {
               type: "string",
-              description: "특정 월 요약 (YYYY-MM 형식, 선택사항). 예: '2025-08'"
+              description: t('ai.tools.generateSummary.month')
             },
             keyword: {
               type: "string",
-              description: "특정 키워드와 관련된 메모만 요약 (선택사항)"
+              description: t('ai.tools.generateSummary.keyword')
             },
             summary_length: {
               type: "string",
-              description: "요약 길이 설정",
+              description: t('ai.tools.generateSummary.summaryLength'),
               enum: ["brief", "detailed", "comprehensive"]
             }
           }
@@ -171,21 +171,21 @@ const ChatScreen: React.FC = () => {
       },
       {
         name: "extract_tasks",
-        description: "사용자의 메모에서 할일이나 작업 항목을 추출합니다. '해야 할 일', '하기', 'TODO' 등의 패턴을 인식하여 액션 아이템을 찾아냅니다.",
+        description: t('ai.tools.extractTasks.description'),
         parameters: {
           type: "object",
           properties: {
             date_from: {
               type: "string",
-              description: "작업을 추출할 메모의 시작 날짜 (YYYY-MM-DD, 선택사항)"
+              description: t('ai.tools.extractTasks.dateFrom')
             },
             date_to: {
               type: "string",
-              description: "작업을 추출할 메모의 종료 날짜 (YYYY-MM-DD, 선택사항)"
+              description: t('ai.tools.extractTasks.dateTo')
             },
             keyword: {
               type: "string",
-              description: "특정 키워드와 관련된 작업만 추출 (선택사항)"
+              description: t('ai.tools.extractTasks.keyword')
             }
           }
         }
@@ -290,14 +290,14 @@ const ChatScreen: React.FC = () => {
         default:
           return {
             success: false,
-            message: `알 수 없는 도구: ${functionName}`
+            message: t('ai.tools.unknownTool', { toolName: functionName })
           };
       }
     } catch (error) {
       console.error(`Error executing tool ${functionName}:`, error);
       return {
         success: false,
-        message: `도구 실행 중 오류가 발생했습니다: ${error}`
+        message: t('ai.tools.executeError', { error })
       };
     }
   };
@@ -353,12 +353,12 @@ const ChatScreen: React.FC = () => {
           timestamp: memo.timestamp,
           formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
         })),
-        message: `${filteredMemos.length}개의 메모를 찾았습니다.`
+        message: t('ai.tools.searchMemos.found', { count: filteredMemos.length })
       };
     } catch (error) {
       return {
         success: false,
-        message: '메모 검색 중 오류가 발생했습니다.'
+        message: t('ai.tools.searchMemos.error')
       };
     }
   };
@@ -442,7 +442,7 @@ const ChatScreen: React.FC = () => {
     } catch (error) {
       return {
         success: false,
-        message: '요약 생성 중 오류가 발생했습니다.'
+        message: t('ai.tools.generateSummary.error')
       };
     }
   };
@@ -564,7 +564,7 @@ const ChatScreen: React.FC = () => {
     } catch (error) {
       return {
         success: false,
-        message: '작업 추출 중 오류가 발생했습니다.'
+        message: t('ai.tools.extractTasks.error')
       };
     }
   };
@@ -667,7 +667,7 @@ const ChatScreen: React.FC = () => {
     } catch (error) {
       return {
         success: false,
-        message: '메모 통계 조회 중 오류가 발생했습니다.'
+        message: t('ai.tools.getStats.error')
       };
     }
   };

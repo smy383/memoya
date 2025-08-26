@@ -21,7 +21,29 @@
     "language": "언어",
     "selectLanguage": "언어 선택",
     "about": "정보",
-    "version": "버전"
+    "version": "버전",
+    "appearance": "외관",
+    "general": "일반",
+    "dataManagementTitle": "데이터 관리",
+    "dataManagement": {
+      "storedDataPrefix": "저장된 데이터:",
+      "itemsCount": "개 항목",
+      "objectType": "객체",
+      "storedDataTitle": "저장된 데이터 확인",
+      "checkDataError": "데이터 확인 중 오류가 발생했습니다.",
+      "testRoomTitle": "테스트 채팅방",
+      "testRoomSuccess": "테스트 채팅방이 저장되었습니다.",
+      "testRoomError": "테스트 저장 중 오류가 발생했습니다.",
+      "resetAllTitle": "⚠️ 모든 데이터 삭제",
+      "resetAllMessage": "정말로 모든 데이터를 삭제하시겠습니까?\\n\\n🚨 주의사항:\\n• 모든 채팅방이 삭제됩니다\\n• 모든 메시지가 삭제됩니다\\n• 모든 메모가 삭제됩니다\\n• 휴지통 데이터도 모두 삭제됩니다\\n• 삭제된 데이터는 절대로 복구할 수 없습니다\\n\\n앱을 다시 시작해야 합니다.",
+      "resetAllConfirm": "모든 데이터 삭제",
+      "resetComplete": "완료",
+      "resetCompleteMessage": "모든 데이터가 삭제되었습니다.\\n앱을 다시 시작해주세요.",
+      "resetError": "데이터 삭제 중 오류가 발생했습니다.",
+      "checkStoredData": "저장된 데이터 확인",
+      "saveTestRoom": "테스트 채팅방 저장",
+      "deleteAllData": "모든 데이터 삭제"
+    }
   },
   "common": {
     "cancel": "취소",
@@ -37,6 +59,7 @@
     "saving": "저장 중...",
     "today": "오늘",
     "yesterday": "어제",
+    "daysAgo": "{{days}}일 전",
     "korean": "한국어",
     "english": "English",
     "japanese": "日本語",
@@ -67,7 +90,50 @@
     "analyzingStats": "메모 통계를 분석중입니다...",
     "generatingSummary": "메모 요약을 생성하고 있습니다...",
     "extractingTasks": "할일 항목을 추출하고 있습니다...",
-    "generatingResponse": "답변을 생성하고 있습니다..."
+    "generatingResponse": "답변을 생성하고 있습니다...",
+    "tools": {
+      "searchMemos": {
+        "description": "사용자의 메모를 다양한 조건으로 검색합니다. 날짜별, 키워드별, 기간별 검색이 가능합니다.",
+        "keyword": "검색할 키워드 (선택사항). 메모 내용에서 해당 키워드를 포함한 메모를 찾습니다.",
+        "dateFrom": "검색 시작 날짜 (YYYY-MM-DD 형식, 선택사항)",
+        "dateTo": "검색 종료 날짜 (YYYY-MM-DD 형식, 선택사항)",
+        "month": "특정 월 검색 (YYYY-MM 형식, 선택사항). 예: '2025-08'",
+        "limit": "반환할 최대 메모 개수 (기본값: 10)",
+        "found": "{{count}}개의 메모를 찾았습니다.",
+        "error": "메모 검색 중 오류가 발생했습니다."
+      },
+      "getStats": {
+        "description": "사용자의 메모 통계 정보를 가져옵니다. 전체 메모 개수, 날짜별 분포 등의 정보를 제공합니다.",
+        "statsType": "통계 유형 (total_count, monthly_distribution, recent_activity 중 하나)",
+        "totalCount": "총 {{count}}개의 메모가 있습니다.",
+        "monthlyDistribution": "월별 메모 분포를 조회했습니다.",
+        "recentActivity": "최근 {{count}}개의 메모입니다.",
+        "error": "메모 통계 조회 중 오류가 발생했습니다."
+      },
+      "generateSummary": {
+        "description": "사용자의 메모들을 요약합니다. 특정 기간이나 키워드로 필터링된 메모들의 핵심 내용을 추출하여 간결한 요약을 생성합니다.",
+        "dateFrom": "요약할 메모의 시작 날짜 (YYYY-MM-DD, 선택사항)",
+        "dateTo": "요약할 메모의 종료 날짜 (YYYY-MM-DD, 선택사항)",
+        "month": "특정 월 요약 (YYYY-MM 형식, 선택사항). 예: '2025-08'",
+        "keyword": "특정 키워드와 관련된 메모만 요약 (선택사항)",
+        "summaryLength": "요약 길이 설정",
+        "noMemos": "지정된 조건에 해당하는 메모가 없습니다.",
+        "noMemosMessage": "조건에 맞는 메모가 없어 요약을 생성할 수 없습니다.",
+        "success": "{{count}}개 메모의 요약을 생성했습니다.",
+        "error": "요약 생성 중 오류가 발생했습니다."
+      },
+      "extractTasks": {
+        "description": "사용자의 메모에서 할일이나 작업 항목을 추출합니다. '해야 할 일', '하기', 'TODO' 등의 패턴을 인식하여 액션 아이템을 찾아냅니다.",
+        "dateFrom": "작업을 추출할 메모의 시작 날짜 (YYYY-MM-DD, 선택사항)",
+        "dateTo": "작업을 추출할 메모의 종료 날짜 (YYYY-MM-DD, 선택사항)",
+        "keyword": "특정 키워드와 관련된 작업만 추출 (선택사항)",
+        "success": "{{memoCount}}개 메모에서 {{taskCount}}개의 작업을 발견했습니다.",
+        "error": "작업 추출 중 오류가 발생했습니다."
+      },
+      "executeError": "도구 실행 중 오류가 발생했습니다: {{error}}",
+      "unknownTool": "알 수 없는 도구: {{toolName}}"
+    },
+    "systemPrompt": "당신은 친근하고 도움이 되는 메모 어시스턴트입니다. \n- 사용자의 메모에 대한 질문에 답하기 위해 정보가 필요할 때만 제공된 도구를 사용하세요\n- 일반적인 대화, 인사말, 메모와 관련 없는 질문에는 도구 없이 자연스럽게 응답하세요\n- 답변은 한국어로 간결하고 도움이 되도록 작성하세요"
   },
   "chatRooms": {
     "title": "채팅방",
@@ -80,8 +146,9 @@
     "edit": "편집",
     "delete": "삭제",
     "editNotImplemented": "편집 기능은 곧 추가될 예정입니다.",
-    "deleteConfirmTitle": "채팅방 삭제",
-    "deleteConfirmMessage": "\"{{title}}\" 채팅방을 삭제하시겠습니까? 모든 메시지와 메모가 삭제됩니다.",
+    "deleteConfirmTitle": "⚠️ 채팅방 완전 삭제",
+    "deleteConfirmMessage": "\"{{title}}\" 채팅방을 삭제하시겠습니까?\\n\\n🚨 주의사항:\\n• 모든 채팅 메시지가 삭제됩니다\\n• 모든 메모가 삭제됩니다\\n• 휴지통의 메모도 모두 삭제됩니다\\n• 삭제된 데이터는 절대로 복구할 수 없습니다\\n\\n정말로 삭제하시겠습니까?",
+    "permanentDelete": "완전 삭제",
     "deleteError": "채팅방 삭제 중 오류가 발생했습니다.",
     "createError": "새 채팅방 생성 중 오류가 발생했습니다.",
     "cannotDeleteLastRoom": "마지막 채팅방은 삭제할 수 없습니다.",
@@ -89,7 +156,11 @@
     "roomName": "채팅방 이름",
     "roomNamePlaceholder": "채팅방 이름을 입력하세요",
     "emptyTitleError": "채팅방 이름을 입력해주세요.",
-    "editError": "채팅방 이름 변경 중 오류가 발생했습니다."
+    "editError": "채팅방 이름 변경 중 오류가 발생했습니다.",
+    "titleLengthError": "채팅방 이름은 50자 이하로 입력해주세요.",
+    "createNewRoom": "새 채팅방 만들기",
+    "creating": "생성 중...",
+    "create": "생성"
   },
   "weekdays": ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
 }

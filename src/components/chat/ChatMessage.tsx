@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getResponsiveFontSize } from '../../utils/dimensions';
+import { useTranslation } from 'react-i18next';
 
 interface ChatMessage {
   id: string;
@@ -17,6 +18,7 @@ interface ChatMessageProps {
 
 const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
   const { theme } = useTheme();
+  const { i18n } = useTranslation();
   
   const isUser = message.type === 'user';
   const isRecord = message.type === 'record';
@@ -117,7 +119,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
           styles.messageTime,
           isRecord ? styles.recordTime : (isUser ? styles.userTime : styles.aiTime)
         ]}>
-          {message.timestamp.toLocaleTimeString('ko-KR', {
+          {message.timestamp.toLocaleTimeString(i18n.language === 'ko' ? 'ko-KR' : 
+                                                    i18n.language === 'ja' ? 'ja-JP' :
+                                                    i18n.language === 'zh' ? 'zh-CN' :
+                                                    i18n.language === 'es' ? 'es-ES' :
+                                                    i18n.language === 'de' ? 'de-DE' : 'en-US', {
             hour: '2-digit',
             minute: '2-digit',
           })}

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getResponsiveFontSize } from '../../utils/dimensions';
+import { useTranslation } from 'react-i18next';
 
 interface CreateRoomModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   onCreateRoom,
 }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const [roomTitle, setRoomTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -38,12 +40,12 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const handleCreate = async () => {
     const title = roomTitle.trim();
     if (!title) {
-      Alert.alert('오류', '채팅방 이름을 입력해주세요.');
+      Alert.alert(t('common.error'), t('chatRooms.emptyTitleError'));
       return;
     }
 
     if (title.length > 50) {
-      Alert.alert('오류', '채팅방 이름은 50자 이하로 입력해주세요.');
+      Alert.alert(t('common.error'), t('chatRooms.titleLengthError'));
       return;
     }
 
@@ -52,7 +54,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       await onCreateRoom(title);
       onClose();
     } catch (error) {
-      Alert.alert('오류', '채팅방 생성 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), t('chatRooms.createError'));
     } finally {
       setIsCreating(false);
     }
@@ -153,15 +155,15 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>새 채팅방 만들기</Text>
+          <Text style={styles.modalTitle}>{t('chatRooms.createNewRoom')}</Text>
           
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>채팅방 이름</Text>
+            <Text style={styles.inputLabel}>{t('chatRooms.roomName')}</Text>
             <TextInput
               style={styles.textInput}
               value={roomTitle}
               onChangeText={setRoomTitle}
-              placeholder="채팅방 이름을 입력하세요"
+              placeholder={t('chatRooms.roomNamePlaceholder')}
               placeholderTextColor={theme.colors.textSecondary}
               maxLength={50}
               autoFocus
@@ -181,7 +183,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
               activeOpacity={0.7}
             >
               <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                취소
+                {t('common.cancel')}
               </Text>
             </TouchableOpacity>
             
@@ -196,7 +198,7 @@ const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
               activeOpacity={0.7}
             >
               <Text style={[styles.buttonText, styles.createButtonText]}>
-                {isCreating ? '생성 중...' : '생성'}
+                {isCreating ? t('chatRooms.creating') : t('chatRooms.create')}
               </Text>
             </TouchableOpacity>
           </View>

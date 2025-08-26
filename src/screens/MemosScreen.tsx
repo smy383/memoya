@@ -33,7 +33,7 @@ interface TrashedMemo extends ExtendedMemo {
 }
 
 const MemosScreen: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const { chatRooms, updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
   const [memos, setMemos] = useState<ExtendedMemo[]>([]);
@@ -136,7 +136,11 @@ const MemosScreen: React.FC = () => {
   }, [searchText, memos]);
 
   const formatDate = (date: Date) => {
-    return date.toLocaleString('ko-KR', {
+    return date.toLocaleString(i18n.language === 'ko' ? 'ko-KR' : 
+                              i18n.language === 'ja' ? 'ja-JP' :
+                              i18n.language === 'zh' ? 'zh-CN' :
+                              i18n.language === 'es' ? 'es-ES' :
+                              i18n.language === 'de' ? 'de-DE' : 'en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

@@ -52,20 +52,20 @@ const SettingsScreen: React.FC = () => {
       const allKeys = await AsyncStorage.getAllKeys();
       const allData = await AsyncStorage.multiGet(allKeys);
 
-      let dataInfo = '저장된 데이터:\n\n';
+      let dataInfo = t('settings.dataManagement.storedDataPrefix') + '\n\n';
       allData.forEach(([key, value]) => {
         if (value) {
           try {
             const parsed = JSON.parse(value);
             if (Array.isArray(parsed)) {
-              dataInfo += `${key}: ${parsed.length}개 항목\n`;
+              dataInfo += `${key}: ${parsed.length}${t('settings.dataManagement.itemsCount')}\n`;
               if (key === 'chatRooms') {
                 parsed.forEach((room: any, index: number) => {
                   dataInfo += `  ${index + 1}. ${room.title} (${room.id})\n`;
                 });
               }
             } else if (typeof parsed === 'object') {
-              dataInfo += `${key}: 객체\n`;
+              dataInfo += `${key}: ${t('settings.dataManagement.objectType')}\n`;
             } else {
               dataInfo += `${key}: ${value}\n`;
             }
@@ -77,9 +77,9 @@ const SettingsScreen: React.FC = () => {
         }
       });
 
-      Alert.alert('저장된 데이터 확인', dataInfo);
+      Alert.alert(t('settings.dataManagement.storedDataTitle'), dataInfo);
     } catch (error) {
-      Alert.alert('오류', '데이터 확인 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), t('settings.dataManagement.checkDataError'));
     }
   };
 
@@ -87,7 +87,7 @@ const SettingsScreen: React.FC = () => {
     try {
       const testRoom = {
         id: 'test-room-' + Date.now(),
-        title: '테스트 채팅방',
+        title: t('settings.dataManagement.testRoomTitle'),
         createdAt: new Date(),
         updatedAt: new Date(),
         messageCount: 0,
@@ -95,34 +95,34 @@ const SettingsScreen: React.FC = () => {
       };
 
       await AsyncStorage.setItem('chatRooms', JSON.stringify([testRoom]));
-      Alert.alert('성공', '테스트 채팅방이 저장되었습니다.');
+      Alert.alert(t('common.success'), t('settings.dataManagement.testRoomSuccess'));
     } catch (error) {
-      Alert.alert('오류', '테스트 저장 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), t('settings.dataManagement.testRoomError'));
     }
   };
 
   const resetAllData = () => {
     Alert.alert(
-      '⚠️ 모든 데이터 삭제',
-      '정말로 모든 데이터를 삭제하시겠습니까?\n\n🚨 주의사항:\n• 모든 채팅방이 삭제됩니다\n• 모든 메시지가 삭제됩니다\n• 모든 메모가 삭제됩니다\n• 휴지통 데이터도 모두 삭제됩니다\n• 삭제된 데이터는 절대로 복구할 수 없습니다\n\n앱을 다시 시작해야 합니다.',
+      t('settings.dataManagement.resetAllTitle'),
+      t('settings.dataManagement.resetAllMessage'),
       [
         {
-          text: '취소',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: '모든 데이터 삭제',
+          text: t('settings.dataManagement.resetAllConfirm'),
           style: 'destructive',
           onPress: async () => {
             try {
               // 모든 AsyncStorage 데이터 삭제
               await AsyncStorage.clear();
               Alert.alert(
-                '완료',
-                '모든 데이터가 삭제되었습니다.\n앱을 다시 시작해주세요.',
+                t('settings.dataManagement.resetComplete'),
+                t('settings.dataManagement.resetCompleteMessage'),
                 [
                   {
-                    text: '확인',
+                    text: t('common.confirm'),
                     onPress: () => {
                       // 앱 재시작을 위해 강제 종료
                       // React Native에서는 직접 앱을 종료할 수 없으므로 사용자가 수동으로 재시작해야 함
@@ -131,7 +131,7 @@ const SettingsScreen: React.FC = () => {
                 ]
               );
             } catch (error) {
-              Alert.alert('오류', '데이터 삭제 중 오류가 발생했습니다.');
+              Alert.alert(t('common.error'), t('settings.dataManagement.resetError'));
             }
           },
         },
@@ -206,7 +206,7 @@ const SettingsScreen: React.FC = () => {
       <View style={styles.content}>
         <Text style={styles.appName}>Memoya</Text>
 
-        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
         <View style={styles.section}>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
             <Text style={styles.settingLabel}>{safeT('settings.darkMode', '다크모드')}</Text>
@@ -219,7 +219,7 @@ const SettingsScreen: React.FC = () => {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>General</Text>
+        <Text style={styles.sectionTitle}>{t('settings.general')}</Text>
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.settingItem}
@@ -255,7 +255,7 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>데이터 관리</Text>
+        <Text style={styles.sectionTitle}>{t('settings.dataManagementTitle')}</Text>
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.settingItem}
@@ -263,7 +263,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="information-circle-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>저장된 데이터 확인</Text>
+              <Text style={styles.settingLabel}>{t('settings.dataManagement.checkStoredData')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -273,7 +273,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="flask-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>테스트 채팅방 저장</Text>
+              <Text style={styles.settingLabel}>{t('settings.dataManagement.saveTestRoom')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
@@ -283,7 +283,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="warning-outline" size={20} color="#ff4757" />
-              <Text style={[styles.settingLabel, { color: '#ff4757' }]}>모든 데이터 삭제</Text>
+              <Text style={[styles.settingLabel, { color: '#ff4757' }]}>{t('settings.dataManagement.deleteAllData')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color="#ff4757" />
           </TouchableOpacity>

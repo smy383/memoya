@@ -25,7 +25,7 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
   onEdit,
   onDelete
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme } = useTheme();
 
   // i18n이 아직 로드되지 않은 경우 기본값 사용
@@ -43,16 +43,24 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     
     if (days === 0) {
-      return date.toLocaleTimeString('ko-KR', { 
+      return date.toLocaleTimeString(i18n.language === 'ko' ? 'ko-KR' : 
+                                      i18n.language === 'ja' ? 'ja-JP' :
+                                      i18n.language === 'zh' ? 'zh-CN' :
+                                      i18n.language === 'es' ? 'es-ES' :
+                                      i18n.language === 'de' ? 'de-DE' : 'en-US', { 
         hour: '2-digit', 
         minute: '2-digit' 
       });
     } else if (days === 1) {
       return safeT('common.yesterday', '어제');
     } else if (days < 7) {
-      return `${days}일 전`;
+      return t('common.daysAgo', { days: days.toString() }) || `${days}일 전`;
     } else {
-      return date.toLocaleDateString('ko-KR', { 
+      return date.toLocaleDateString(i18n.language === 'ko' ? 'ko-KR' : 
+                                      i18n.language === 'ja' ? 'ja-JP' :
+                                      i18n.language === 'zh' ? 'zh-CN' :
+                                      i18n.language === 'es' ? 'es-ES' :
+                                      i18n.language === 'de' ? 'de-DE' : 'en-US', { 
         month: 'short', 
         day: 'numeric' 
       });
