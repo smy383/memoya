@@ -1,11 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Switch,
-  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+import LanguageSelector from '../components/LanguageSelector';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -22,40 +22,28 @@ const SettingsScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme, isDark, toggleTheme } = useTheme();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
+  const [isLanguageSelectorVisible, setIsLanguageSelectorVisible] = useState(false);
+
+  // i18n이 아직 로드되지 않은 경우 기본값 사용
+  const safeT = (key: string, defaultValue?: string) => {
+    try {
+      return t(key) || defaultValue || key;
+    } catch (error) {
+      return defaultValue || key;
+    }
+  };
 
 
   const openTrash = () => {
     navigation.navigate('Trash');
   };
 
-  const changeLanguage = () => {
-    const languages = ['ko', 'en', 'ja', 'zh', 'es', 'de'];
-    const languageNames = {
-      ko: t('common.korean'),
-      en: t('common.english'), 
-      ja: t('common.japanese'),
-      zh: t('common.chinese'),
-      es: t('common.spanish'),
-      de: t('common.german')
-    };
-    
-    const currentIndex = languages.indexOf(i18n.language);
-    const newLang = languages[(currentIndex + 1) % languages.length];
-    
-    Alert.alert(
-      t('settings.language'),
-      `Change language to ${languageNames[newLang as keyof typeof languageNames]}?`,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          onPress: async () => {
-            await i18n.changeLanguage(newLang);
-            await AsyncStorage.setItem('selectedLanguage', newLang);
-          },
-        },
-      ]
-    );
+  const openLanguageSelector = () => {
+    setIsLanguageSelectorVisible(true);
+  };
+
+  const closeLanguageSelector = () => {
+    setIsLanguageSelectorVisible(false);
   };
 
 
@@ -128,7 +116,7 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Appearance</Text>
         <View style={styles.section}>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
-            <Text style={styles.settingLabel}>{t('settings.darkMode')}</Text>
+            <Text style={styles.settingLabel}>{safeT('settings.darkMode', '다크모드')}</Text>
             <Switch
               value={isDark}
               onValueChange={toggleTheme}
@@ -146,36 +134,47 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="trash-outline" size={20} color={theme.colors.textSecondary} />
-              <Text style={styles.settingLabel}>{t('trash.title')}</Text>
+              <Text style={styles.settingLabel}>{safeT('trash.title', '휴지통')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.settingItem, styles.lastSettingItem]}
-            onPress={changeLanguage}
+            onPress={openLanguageSelector}
           >
-            <Text style={styles.settingLabel}>{t('settings.language')}</Text>
-            <Text style={styles.settingValue}>
-              {
-                i18n.language === 'ko' ? t('common.korean') :
-                i18n.language === 'ja' ? t('common.japanese') :
-                i18n.language === 'zh' ? t('common.chinese') :
-                i18n.language === 'es' ? t('common.spanish') :
-                i18n.language === 'de' ? t('common.german') :
-                t('common.english')
-              }
-            </Text>
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="language-outline" size={20} color={theme.colors.textSecondary} />
+              <Text style={styles.settingLabel}>{safeT('settings.language', '언어')}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.settingValue}>
+                {
+                  i18n.language === 'ko' ? safeT('common.korean', '한국어') :
+                  i18n.language === 'ja' ? safeT('common.japanese', '日本語') :
+                  i18n.language === 'zh' ? safeT('common.chinese', '中文') :
+                  i18n.language === 'es' ? safeT('common.spanish', 'Español') :
+                  i18n.language === 'de' ? safeT('common.german', 'Deutsch') :
+                  safeT('common.english', 'English')
+                }
+              </Text>
+              <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
+            </View>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+        <Text style={styles.sectionTitle}>{safeT('settings.about', '정보')}</Text>
         <View style={styles.section}>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
-            <Text style={styles.settingLabel}>{t('settings.version')}</Text>
+            <Text style={styles.settingLabel}>{safeT('settings.version', '버전')}</Text>
             <Text style={styles.settingValue}>1.0.0</Text>
           </View>
         </View>
       </View>
+
+      <LanguageSelector
+        visible={isLanguageSelectorVisible}
+        onClose={closeLanguageSelector}
+      />
     </View>
   );
 };

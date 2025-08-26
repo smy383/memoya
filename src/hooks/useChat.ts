@@ -11,7 +11,7 @@ interface ChatListItem {
     date?: string;
 }
 
-export const useChat = () => {
+export const useChat = (roomId?: string) => {
     const { t } = useTranslation();
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
@@ -68,7 +68,8 @@ export const useChat = () => {
 
     const loadChatMessages = async () => {
         try {
-            const savedMessages = await AsyncStorage.getItem('chatMessages');
+            const storageKey = roomId ? `chatMessages_${roomId}` : 'chatMessages';
+            const savedMessages = await AsyncStorage.getItem(storageKey);
             if (savedMessages) {
                 const parsedMessages: ChatMessage[] = JSON.parse(savedMessages);
                 const messagesWithStatus = await Promise.all(
@@ -79,15 +80,20 @@ export const useChat = () => {
                     }))
                 );
                 setChatMessages(messagesWithStatus);
+            } else {
+                // 메시지가 없으면 빈 배열로 초기화
+                setChatMessages([]);
             }
         } catch (error) {
             console.error('Error loading chat messages:', error);
+            setChatMessages([]);
         }
     };
 
     const getMemoStatus = async (memoId: string): Promise<'active' | 'deleted' | 'permanentlyDeleted'> => {
         try {
-            const activeMemos = await AsyncStorage.getItem('memos');
+            const memosKey = roomId ? `memos_${roomId}` : 'memos';
+            const activeMemos = await AsyncStorage.getItem(memosKey);
             if (activeMemos) {
                 const memos = JSON.parse(activeMemos);
                 if (memos.find((memo: any) => memo.id === memoId)) {
@@ -95,7 +101,8 @@ export const useChat = () => {
                 }
             }
 
-            const trashedMemos = await AsyncStorage.getItem('trashedMemos');
+            const trashedMemosKey = roomId ? `trashedMemos_${roomId}` : 'trashedMemos';
+            const trashedMemos = await AsyncStorage.getItem(trashedMemosKey);
             if (trashedMemos) {
                 const trashed = JSON.parse(trashedMemos);
                 if (trashed.find((memo: any) => memo.id === memoId)) {
@@ -112,14 +119,18 @@ export const useChat = () => {
 
     const saveChatMessages = async (messages: ChatMessage[]) => {
         try {
-            await AsyncStorage.setItem('chatMessages', JSON.stringify(messages));
+            const storageKey = roomId ? `chatMessages_${roomId}` : 'chatMessages';
+            await AsyncStorage.setItem(storageKey, JSON.stringify(messages));
         } catch (error) {
             console.error('Error saving chat messages:', error);
         }
     };
 
     const addMessage = (message: ChatMessage) => {
+        console.log('useChat addMessage: Adding message', message);
+        console.log('useChat addMessage: Current messages count:', chatMessages.length);
         const updatedMessages = [...chatMessages, message];
+        console.log('useChat addMessage: Updated messages count:', updatedMessages.length);
         setChatMessages(updatedMessages);
         saveChatMessages(updatedMessages);
         return updatedMessages;
@@ -138,18 +149,20 @@ export const useChat = () => {
     }, [chatMessages.length]);
 
     useEffect(() => {
+        console.log('useChat: roomId changed to:', roomId);
         loadChatMessages();
-    }, []);
+    }, [roomId]);
 
     useEffect(() => {
         groupMessagesByDate();
     }, [groupMessagesByDate]);
 
-    useFocusEffect(
-        useCallback(() => {
-            updateMemoStatus();
-        }, [updateMemoStatus])
-    );
+    // 임시로 비활성화 - 디버깅용
+    // useFocusEffect(
+    //     useCallback(() => {
+    //         updateMemoStatus();
+    //     }, [updateMemoStatus])
+    // );
 
     return {
         chatMessages,

@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { useTheme } from '../contexts/ThemeContext';
 import { RootTabParamList, RootStackParamList } from '../types';
+import ChatRoomsListScreen from '../screens/ChatRoomsListScreen';
 import ChatScreenRefactored from '../screens/ChatScreenRefactored';
 import MemosScreen from '../screens/MemosScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -25,8 +26,8 @@ const MainTabNavigator: React.FC = () => {
           let iconName: string;
 
           switch (route.name) {
-            case 'Chat':
-              iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+            case 'ChatRooms':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
               break;
             case 'Memos':
               iconName = focused ? 'document-text' : 'document-text-outline';
@@ -65,10 +66,10 @@ const MainTabNavigator: React.FC = () => {
       })}
     >
       <Tab.Screen
-        name="Chat"
-        component={ChatScreenRefactored}
+        name="ChatRooms"
+        component={ChatRoomsListScreen}
         options={{
-          title: t('tabs.chat'),
+          title: t('tabs.chatRooms'),
           headerShown: false,
         }}
       />
@@ -101,6 +102,14 @@ const TabNavigator: React.FC = () => {
         name="Main" 
         component={MainTabNavigator}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ChatRoom" 
+        component={ChatScreenRefactored}
+        options={{ 
+          headerShown: false,
+          presentation: 'card',
+        }}
       />
       <Stack.Screen 
         name="Trash" 

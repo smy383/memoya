@@ -100,17 +100,17 @@ export const getMemoTools = () => {
   ];
 };
 
-export const executeMemoTool = async (functionName: string, args: any) => {
+export const executeMemoTool = async (functionName: string, args: any, roomId?: string) => {
   try {
     switch (functionName) {
       case 'search_memos':
-        return await searchMemos(args);
+        return await searchMemos(args, roomId);
       case 'get_memo_stats':
-        return await getMemoStats(args);
+        return await getMemoStats(args, roomId);
       case 'generate_summary':
-        return await generateSummary(args);
+        return await generateSummary(args, roomId);
       case 'extract_tasks':
-        return await extractTasks(args);
+        return await extractTasks(args, roomId);
       default:
         return {
           success: false,
@@ -126,9 +126,10 @@ export const executeMemoTool = async (functionName: string, args: any) => {
   }
 };
 
-const searchMemos = async (args: any) => {
+const searchMemos = async (args: any, roomId?: string) => {
   try {
-    const activeMemos = await AsyncStorage.getItem('memos');
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
     const memos = activeMemos ? JSON.parse(activeMemos) : [];
     
     let filteredMemos = memos;
@@ -183,9 +184,10 @@ const searchMemos = async (args: any) => {
   }
 };
 
-const getMemoStats = async (args: any) => {
+const getMemoStats = async (args: any, roomId?: string) => {
   try {
-    const activeMemos = await AsyncStorage.getItem('memos');
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
     const memos = activeMemos ? JSON.parse(activeMemos) : [];
     
     switch (args.type) {
@@ -245,9 +247,10 @@ const getMemoStats = async (args: any) => {
   }
 };
 
-const generateSummary = async (args: any) => {
+const generateSummary = async (args: any, roomId?: string) => {
   try {
-    const activeMemos = await AsyncStorage.getItem('memos');
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
     const memos = activeMemos ? JSON.parse(activeMemos) : [];
     
     let filteredMemos = memos;
@@ -324,9 +327,10 @@ const generateSummary = async (args: any) => {
   }
 };
 
-const extractTasks = async (args: any) => {
+const extractTasks = async (args: any, roomId?: string) => {
   try {
-    const activeMemos = await AsyncStorage.getItem('memos');
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
     const memos = activeMemos ? JSON.parse(activeMemos) : [];
     
     let filteredMemos = memos;

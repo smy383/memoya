@@ -1,6 +1,6 @@
 {
   "tabs": {
-    "chat": "聊天",
+    "chatRooms": "聊天室",
     "memos": "备忘录",
     "settings": "设置"
   },
@@ -32,6 +32,7 @@
     "restore": "恢复",
     "success": "成功",
     "error": "错误",
+    "info": "信息",
     "today": "今天",
     "yesterday": "昨天",
     "korean": "한국어",
@@ -63,6 +64,23 @@
     "searchingMemos": "正在搜索备忘录...",
     "analyzingStats": "正在分析备忘录统计...",
     "generatingResponse": "正在生成回答..."
+  },
+  "chatRooms": {
+    "title": "聊天室",
+    "defaultTitle": "默认聊天室",
+    "newRoom": "新聊天",
+    "current": "当前",
+    "noRooms": "暂无聊天室",
+    "createFirstRoom": "创建您的第一个聊天室",
+    "selectAction": "选择操作",
+    "edit": "编辑",
+    "delete": "删除",
+    "editNotImplemented": "编辑功能即将推出。",
+    "deleteConfirmTitle": "删除聊天室",
+    "deleteConfirmMessage": "是否确定要删除“{{title}}”聊天室？所有消息和备忘录都将被删除。",
+    "deleteError": "删除聊天室时发生错误。",
+    "createError": "创建新聊天室时发生错误。",
+    "cannotDeleteLastRoom": "不能删除最后一个聊天室。"
   },
   "weekdays": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
 }

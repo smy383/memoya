@@ -20,10 +20,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+import { useChatRooms } from '../hooks/useChatRooms';
 
 interface ExtendedMemo extends Memo {
   isFavorite?: boolean;
   title?: string;
+  roomId?: string; // 어느 채팅방에 속하는지
 }
 
 interface TrashedMemo extends ExtendedMemo {
@@ -33,6 +35,7 @@ interface TrashedMemo extends ExtendedMemo {
 const MemosScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { chatRooms } = useChatRooms();
   const [memos, setMemos] = useState<ExtendedMemo[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filteredMemos, setFilteredMemos] = useState<ExtendedMemo[]>([]);
@@ -43,18 +46,71 @@ const MemosScreen: React.FC = () => {
 
   const loadMemos = async () => {
     try {
-      const storedMemos = await AsyncStorage.getItem('memos');
-      if (storedMemos) {
-        const parsedMemos = JSON.parse(storedMemos);
-        const memosWithDates = parsedMemos.map((memo: any) => ({
+      console.log('MemosScreen: Loading memos from chatRooms:', chatRooms.map(r => r.id));
+      let allMemos: ExtendedMemo[] = [];
+
+      // 모든 채팅방의 메모를 로드
+      for (const room of chatRooms) {
+        const roomMemosKey = `memos_${room.id}`;
+        console.log('MemosScreen: Checking memos for room:', room.id, 'with key:', roomMemosKey);
+        const storedMemos = await AsyncStorage.getItem(roomMemosKey);
+        if (storedMemos) {
+          const parsedMemos = JSON.parse(storedMemos);
+          console.log('MemosScreen: Found', parsedMemos.length, 'memos for room:', room.id);
+          const memosWithDates = parsedMemos.map((memo: any) => ({
+            ...memo,
+            timestamp: new Date(memo.timestamp),
+            isFavorite: memo.isFavorite || false,
+            title: memo.title || memo.content.substring(0, 10),
+            roomId: room.id,
+          }));
+          allMemos = allMemos.concat(memosWithDates);
+        } else {
+          console.log('MemosScreen: No memos found for room:', room.id);
+        }
+      }
+
+      // 추가로 모든 AsyncStorage 키를 확인해서 누락된 채팅방 메모가 있는지 체크
+      const allKeys = await AsyncStorage.getAllKeys();
+      const memoKeys = allKeys.filter(key => key.startsWith('memos_') && !chatRooms.some(room => key === `memos_${room.id}`));
+      console.log('MemosScreen: Found additional memo keys not in chatRooms:', memoKeys);
+
+      for (const key of memoKeys) {
+        const storedMemos = await AsyncStorage.getItem(key);
+        if (storedMemos) {
+          const parsedMemos = JSON.parse(storedMemos);
+          const roomId = key.replace('memos_', '');
+          console.log('MemosScreen: Found', parsedMemos.length, 'memos for missing room:', roomId);
+          const memosWithDates = parsedMemos.map((memo: any) => ({
+            ...memo,
+            timestamp: new Date(memo.timestamp),
+            isFavorite: memo.isFavorite || false,
+            title: memo.title || memo.content.substring(0, 10),
+            roomId: roomId,
+          }));
+          allMemos = allMemos.concat(memosWithDates);
+        }
+      }
+
+      // 레거시 메모도 로드 (기존 'memos' 키)
+      const legacyMemos = await AsyncStorage.getItem('memos');
+      if (legacyMemos) {
+        const parsedLegacyMemos = JSON.parse(legacyMemos);
+        const legacyMemosWithDates = parsedLegacyMemos.map((memo: any) => ({
           ...memo,
           timestamp: new Date(memo.timestamp),
           isFavorite: memo.isFavorite || false,
           title: memo.title || memo.content.substring(0, 10),
+          roomId: undefined, // 레거시 메모
         }));
-        setMemos(memosWithDates);
-        setFilteredMemos(memosWithDates);
+        allMemos = allMemos.concat(legacyMemosWithDates);
       }
+
+      // 시간순으로 정렬 (최신순)
+      allMemos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      setMemos(allMemos);
+      setFilteredMemos(allMemos);
     } catch (error) {
       console.error('Error loading memos:', error);
     }
@@ -62,8 +118,9 @@ const MemosScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
+      console.log('MemosScreen: Screen focused, loading memos');
       loadMemos();
-    }, [])
+    }, []) // 의존성 제거하여 항상 새로고침
   );
 
   useEffect(() => {
@@ -98,18 +155,32 @@ const MemosScreen: React.FC = () => {
         deletedAt: new Date(),
       };
 
-      // 기존 휴지통 메모들 불러오기
-      const existingTrashedMemos = await AsyncStorage.getItem('trashedMemos');
+      // 채팅방별 휴지통 키 결정
+      const trashedMemosKey = memoToDelete.roomId ? `trashedMemos_${memoToDelete.roomId}` : 'trashedMemos';
+      const existingTrashedMemos = await AsyncStorage.getItem(trashedMemosKey);
       const trashedMemos = existingTrashedMemos ? JSON.parse(existingTrashedMemos) : [];
-      
+
       // 휴지통에 추가
       trashedMemos.unshift(trashedMemo);
-      await AsyncStorage.setItem('trashedMemos', JSON.stringify(trashedMemos));
+      await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(trashedMemos));
 
-      // 메모 목록에서 제거
-      const updatedMemos = memos.filter(memo => memo.id !== id);
-      await AsyncStorage.setItem('memos', JSON.stringify(updatedMemos));
-      setMemos(updatedMemos);
+      // 원본 메모 목록에서 제거
+      const memosKey = memoToDelete.roomId ? `memos_${memoToDelete.roomId}` : 'memos';
+      const existingMemos = await AsyncStorage.getItem(memosKey);
+      if (existingMemos) {
+        const currentMemos = JSON.parse(existingMemos);
+        const updatedMemos = currentMemos.filter((memo: any) => memo.id !== id);
+        await AsyncStorage.setItem(memosKey, JSON.stringify(updatedMemos));
+      }
+
+      // UI 상태 업데이트
+      const updatedDisplayMemos = memos.filter(memo => memo.id !== id);
+      setMemos(updatedDisplayMemos);
+      setFilteredMemos(updatedDisplayMemos.filter(memo =>
+        !searchText.trim() ||
+        memo.content.toLowerCase().includes(searchText.toLowerCase()) ||
+        (memo.title && memo.title.toLowerCase().includes(searchText.toLowerCase()))
+      ));
     } catch (error) {
       console.error('Error moving memo to trash:', error);
     }
@@ -128,11 +199,30 @@ const MemosScreen: React.FC = () => {
 
   const toggleFavorite = async (id: string) => {
     try {
-      const updatedMemos = memos.map(memo =>
+      const memoToUpdate = memos.find(memo => memo.id === id);
+      if (!memoToUpdate) return;
+
+      // 메모 상태 업데이트
+      const updatedDisplayMemos = memos.map(memo =>
         memo.id === id ? { ...memo, isFavorite: !memo.isFavorite } : memo
       );
-      await AsyncStorage.setItem('memos', JSON.stringify(updatedMemos));
-      setMemos(updatedMemos);
+      setMemos(updatedDisplayMemos);
+      setFilteredMemos(updatedDisplayMemos.filter(memo =>
+        !searchText.trim() ||
+        memo.content.toLowerCase().includes(searchText.toLowerCase()) ||
+        (memo.title && memo.title.toLowerCase().includes(searchText.toLowerCase()))
+      ));
+
+      // 저장소 업데이트
+      const memosKey = memoToUpdate.roomId ? `memos_${memoToUpdate.roomId}` : 'memos';
+      const existingMemos = await AsyncStorage.getItem(memosKey);
+      if (existingMemos) {
+        const currentMemos = JSON.parse(existingMemos);
+        const updatedStorageMemos = currentMemos.map((memo: any) =>
+          memo.id === id ? { ...memo, isFavorite: !memoToUpdate.isFavorite } : memo
+        );
+        await AsyncStorage.setItem(memosKey, JSON.stringify(updatedStorageMemos));
+      }
     } catch (error) {
       console.error('Error updating favorite:', error);
     }
@@ -165,13 +255,32 @@ const MemosScreen: React.FC = () => {
     if (!selectedMemo || !editContent.trim()) return;
 
     try {
-      const updatedMemos = memos.map(memo =>
-        memo.id === selectedMemo.id 
+      // UI 상태 업데이트
+      const updatedDisplayMemos = memos.map(memo =>
+        memo.id === selectedMemo.id
           ? { ...memo, title: editTitle.trim() || editContent.substring(0, 10), content: editContent.trim() }
           : memo
       );
-      await AsyncStorage.setItem('memos', JSON.stringify(updatedMemos));
-      setMemos(updatedMemos);
+      setMemos(updatedDisplayMemos);
+      setFilteredMemos(updatedDisplayMemos.filter(memo =>
+        !searchText.trim() ||
+        memo.content.toLowerCase().includes(searchText.toLowerCase()) ||
+        (memo.title && memo.title.toLowerCase().includes(searchText.toLowerCase()))
+      ));
+
+      // 저장소 업데이트
+      const memosKey = selectedMemo.roomId ? `memos_${selectedMemo.roomId}` : 'memos';
+      const existingMemos = await AsyncStorage.getItem(memosKey);
+      if (existingMemos) {
+        const currentMemos = JSON.parse(existingMemos);
+        const updatedStorageMemos = currentMemos.map((memo: any) =>
+          memo.id === selectedMemo.id
+            ? { ...memo, title: editTitle.trim() || editContent.substring(0, 10), content: editContent.trim() }
+            : memo
+        );
+        await AsyncStorage.setItem(memosKey, JSON.stringify(updatedStorageMemos));
+      }
+
       closeMemoModal();
     } catch (error) {
       console.error('Error saving memo:', error);
@@ -180,7 +289,7 @@ const MemosScreen: React.FC = () => {
 
   const renderMemoItem = ({ item }: { item: ExtendedMemo }) => (
     <View style={styles.memoItem}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.memoMainContent}
         onPress={() => openMemoModal(item)}
         activeOpacity={0.7}
@@ -196,25 +305,25 @@ const MemosScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => toggleFavorite(item.id)}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon 
-            name={item.isFavorite ? "heart" : "heart-outline"} 
-            size={18} 
-            color={item.isFavorite ? "#FF6B6B" : theme.colors.textSecondary} 
+          <Icon
+            name={item.isFavorite ? "heart" : "heart-outline"}
+            size={18}
+            color={item.isFavorite ? "#FF6B6B" : theme.colors.textSecondary}
           />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => copyToClipboard(item.content)}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Icon name="copy-outline" size={18} color={theme.colors.textSecondary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => confirmDelete(item.id)}
-          hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Icon name="trash-outline" size={18} color={theme.colors.textSecondary} />
         </TouchableOpacity>
@@ -353,7 +462,7 @@ const MemosScreen: React.FC = () => {
           onChangeText={setSearchText}
         />
       </View>
-      
+
       {filteredMemos.length > 0 ? (
         <FlatList
           style={styles.memosList}
@@ -377,12 +486,12 @@ const MemosScreen: React.FC = () => {
         onRequestClose={closeMemoModal}
       >
         <View style={styles.modalContainer}>
-          <KeyboardAvoidingView 
+          <KeyboardAvoidingView
             style={styles.modalContent}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           >
             <View style={styles.modalHeader}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalButton}
                 onPress={closeMemoModal}
               >
@@ -391,7 +500,7 @@ const MemosScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
               <Text style={styles.modalTitle}>{t('modal.memoTitle')}</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalButton}
                 onPress={saveMemo}
               >
@@ -400,7 +509,7 @@ const MemosScreen: React.FC = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <TextInput
                 style={styles.titleInput}

@@ -15,7 +15,7 @@ interface ChatMessageProps {
   message: ChatMessage;
 }
 
-const ChatMessageComponent: React.FC<ChatMessageProps> = React.memo(({ message }) => {
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
   const { theme } = useTheme();
   
   const isUser = message.type === 'user';
@@ -125,7 +125,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = React.memo(({ message }
       </View>
     </View>
   );
-});
+};
 
 export default ChatMessageComponent;
 export type { ChatMessage };

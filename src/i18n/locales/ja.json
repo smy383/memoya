@@ -1,6 +1,6 @@
 {
   "tabs": {
-    "chat": "チャット",
+    "chatRooms": "チャットルーム",
     "memos": "メモ",
     "settings": "設定"
   },
@@ -32,6 +32,7 @@
     "restore": "復元",
     "success": "成功",
     "error": "エラー",
+    "info": "情報",
     "today": "今日",
     "yesterday": "昨日",
     "korean": "한국어",
@@ -63,6 +64,23 @@
     "searchingMemos": "メモを検索中です...",
     "analyzingStats": "メモ統計を分析中です...",
     "generatingResponse": "回答を生成中です..."
+  },
+  "chatRooms": {
+    "title": "チャットルーム",
+    "defaultTitle": "デフォルトチャットルーム",
+    "newRoom": "新しいチャット",
+    "current": "現在",
+    "noRooms": "チャットルームがありません",
+    "createFirstRoom": "最初のチャットルームを作成してください",
+    "selectAction": "操作を選択してください",
+    "edit": "編集",
+    "delete": "削除",
+    "editNotImplemented": "編集機能は近日追加予定です。",
+    "deleteConfirmTitle": "チャットルーム削除",
+    "deleteConfirmMessage": "\"{{title}}\" チャットルームを削除しますか？すべてのメッセージとメモが削除されます。",
+    "deleteError": "チャットルーム削除中にエラーが発生しました。",
+    "createError": "新しいチャットルーム作成中にエラーが発生しました。",
+    "cannotDeleteLastRoom": "最後のチャットルームは削除できません。"
   },
   "weekdays": ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
 }

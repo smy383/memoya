@@ -12,7 +12,7 @@ interface ChatInputProps {
   isAIProcessing: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = React.memo(({
+const ChatInput: React.FC<ChatInputProps> = ({
   message,
   onMessageChange,
   onRecord,
@@ -109,6 +109,6 @@ const ChatInput: React.FC<ChatInputProps> = React.memo(({
       </View>
     </View>
   );
-});
+};
 
 export default ChatInput;

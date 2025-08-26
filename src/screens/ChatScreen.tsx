@@ -13,20 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
-import { Memo } from '../types';
+import { Memo, RootStackParamList } from '../types';
+import { useChatRooms } from '../hooks/useChatRooms';
+import { useChat } from '../hooks/useChat';
+import ChatMessageComponent, { ChatMessage } from '../components/chat/ChatMessage';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import { API_CONFIG } from '../config/api';
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  timestamp: Date;
-  type: 'user' | 'ai' | 'record';
-  memoStatus?: 'active' | 'deleted' | 'permanentlyDeleted';
-}
 
 interface ChatListItem {
   id: string;
@@ -35,42 +32,28 @@ interface ChatListItem {
   date?: string;
 }
 
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
 const ChatScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute();
+  const { getCurrentRoom } = useChatRooms();
   const [message, setMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [aiProcessingStatus, setAiProcessingStatus] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    loadChatMessages();
-  }, []);
+  // 현재 채팅방 정보 가져오기
+  const currentRoom = getCurrentRoom();
+  
+  console.log('ChatScreen: Current room:', currentRoom?.id);
+  
+  // useChat 훅 사용 (채팅방별 데이터 분리)
+  const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(currentRoom?.id);
 
-  useFocusEffect(
-    useCallback(() => {
-      // 화면이 포커스될 때마다 메모 상태 업데이트
-      const updateMemoStatus = async () => {
-        const updatedMessages = await Promise.all(
-          chatMessages.map(async (msg) => ({
-            ...msg,
-            memoStatus: msg.type === 'record' ? await getMemoStatus(msg.id) : msg.memoStatus,
-          }))
-        );
-        setChatMessages(updatedMessages);
-      };
-      
-      if (chatMessages.length > 0) {
-        updateMemoStatus();
-      }
-    }, [chatMessages.length])
-  );
 
-  useEffect(() => {
-    groupMessagesByDate();
-  }, [chatMessages]);
 
   useEffect(() => {
     // 새 메시지가 추가되면 하단으로 스크롤
@@ -90,103 +73,9 @@ const ChatScreen: React.FC = () => {
     }
   }, [isAIProcessing]);
 
-  const formatDate = (date: Date): string => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    
-    const isToday = date.toDateString() === today.toDateString();
-    const isYesterday = date.toDateString() === yesterday.toDateString();
-    
-    if (isToday) {
-      return t('common.today');
-    } else if (isYesterday) {
-      return t('common.yesterday');
-    } else {
-      const weekdays = t('weekdays');
-      const weekday = weekdays[date.getDay()];
-      return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${weekday}`;
-    }
-  };
 
-  const groupMessagesByDate = () => {
-    if (chatMessages.length === 0) {
-      setChatListData([]);
-      return;
-    }
 
-    const grouped: ChatListItem[] = [];
-    let currentDate = '';
 
-    chatMessages.forEach((message, index) => {
-      const messageDate = message.timestamp.toDateString();
-      
-      if (messageDate !== currentDate) {
-        currentDate = messageDate;
-        grouped.push({
-          id: `date-${messageDate}`,
-          type: 'dateSeparator',
-          date: formatDate(message.timestamp),
-        });
-      }
-      
-      grouped.push({
-        id: message.id,
-        type: 'message',
-        message,
-      });
-    });
-
-    setChatListData(grouped);
-  };
-
-  const loadChatMessages = async () => {
-    try {
-      const savedMessages = await AsyncStorage.getItem('chatMessages');
-      if (savedMessages) {
-        const parsedMessages: ChatMessage[] = JSON.parse(savedMessages);
-        // timestamp를 Date 객체로 변환하고 메모 상태 업데이트
-        const messagesWithStatus = await Promise.all(
-          parsedMessages.map(async (msg) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-            memoStatus: msg.type === 'record' ? await getMemoStatus(msg.id) : undefined,
-          }))
-        );
-        setChatMessages(messagesWithStatus);
-      }
-    } catch (error) {
-      console.error('Error loading chat messages:', error);
-    }
-  };
-
-  const getMemoStatus = async (memoId: string): Promise<'active' | 'deleted' | 'permanentlyDeleted'> => {
-    try {
-      // 활성 메모에서 확인
-      const activeMemos = await AsyncStorage.getItem('memos');
-      if (activeMemos) {
-        const memos = JSON.parse(activeMemos);
-        if (memos.find((memo: any) => memo.id === memoId)) {
-          return 'active';
-        }
-      }
-
-      // 휴지통에서 확인
-      const trashedMemos = await AsyncStorage.getItem('trashedMemos');
-      if (trashedMemos) {
-        const trashed = JSON.parse(trashedMemos);
-        if (trashed.find((memo: any) => memo.id === memoId)) {
-          return 'deleted';
-        }
-      }
-
-      // 둘 다 없으면 영구 삭제됨
-      return 'permanentlyDeleted';
-    } catch (error) {
-      console.error('Error checking memo status:', error);
-      return 'active'; // 오류시 기본값
-    }
-  };
 
   const getMemoTools = () => {
     return [
@@ -399,7 +288,8 @@ const ChatScreen: React.FC = () => {
 
   const searchMemos = async (args: any) => {
     try {
-      const activeMemos = await AsyncStorage.getItem('memos');
+      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
+      const activeMemos = await AsyncStorage.getItem(memosKey);
       const memos = activeMemos ? JSON.parse(activeMemos) : [];
       
       let filteredMemos = memos;
@@ -460,7 +350,8 @@ const ChatScreen: React.FC = () => {
   const generateSummary = async (args: any) => {
     try {
       // 메모 로드 및 필터링 (search_memos와 유사한 로직)
-      const activeMemos = await AsyncStorage.getItem('memos');
+      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
+      const activeMemos = await AsyncStorage.getItem(memosKey);
       const memos = activeMemos ? JSON.parse(activeMemos) : [];
       
       let filteredMemos = memos;
@@ -597,7 +488,8 @@ const ChatScreen: React.FC = () => {
   const extractTasks = async (args: any) => {
     try {
       // 메모 로드 및 필터링
-      const activeMemos = await AsyncStorage.getItem('memos');
+      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
+      const activeMemos = await AsyncStorage.getItem(memosKey);
       const memos = activeMemos ? JSON.parse(activeMemos) : [];
       
       let filteredMemos = memos;
@@ -703,7 +595,8 @@ const ChatScreen: React.FC = () => {
 
   const getMemoStats = async (args: any) => {
     try {
-      const activeMemos = await AsyncStorage.getItem('memos');
+      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
+      const activeMemos = await AsyncStorage.getItem(memosKey);
       const memos = activeMemos ? JSON.parse(activeMemos) : [];
       
       switch (args.type) {
@@ -763,16 +656,13 @@ const ChatScreen: React.FC = () => {
     }
   };
 
-  const saveChatMessages = async (messages: ChatMessage[]) => {
-    try {
-      await AsyncStorage.setItem('chatMessages', JSON.stringify(messages));
-    } catch (error) {
-      console.error('Error saving chat messages:', error);
-    }
-  };
+
 
   const handleRecord = async () => {
     if (!message.trim()) return;
+
+    console.log('handleRecord: Starting record process');
+    console.log('Current room:', currentRoom?.id);
 
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -782,11 +672,11 @@ const ChatScreen: React.FC = () => {
       memoStatus: 'active',
     };
 
-    const updatedMessages = [...chatMessages, newMessage];
-    setChatMessages(updatedMessages);
-    
-    // 채팅 메시지 저장
-    await saveChatMessages(updatedMessages);
+    console.log('handleRecord: Created new message:', newMessage);
+
+    // useChat 훅의 addMessage 사용
+    const updatedMessages = addMessage(newMessage);
+    console.log('handleRecord: Added message, total messages:', updatedMessages.length);
 
     try {
       const newMemo: Memo = {
@@ -795,19 +685,16 @@ const ChatScreen: React.FC = () => {
         timestamp: newMessage.timestamp,
       };
 
-      const existingMemos = await AsyncStorage.getItem('memos');
+      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
+      console.log('handleRecord: Saving memo with key:', memosKey);
+      
+      const existingMemos = await AsyncStorage.getItem(memosKey);
       const memos = existingMemos ? JSON.parse(existingMemos) : [];
       
       memos.unshift(newMemo);
-      await AsyncStorage.setItem('memos', JSON.stringify(memos));
+      await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
       
-      // 메모 저장 완료 후 메시지 상태 확인 및 업데이트
-      const finalUpdatedMessages = updatedMessages.map(msg =>
-        msg.id === newMessage.id ? { ...msg, memoStatus: 'active' as const } : msg
-      );
-      setChatMessages(finalUpdatedMessages);
-      await saveChatMessages(finalUpdatedMessages);
-      
+      console.log('handleRecord: Memo saved successfully');
       setMessage('');
     } catch (error) {
       console.error('Error saving memo:', error);
@@ -824,11 +711,8 @@ const ChatScreen: React.FC = () => {
       type: 'user',
     };
 
-    const updatedMessages = [...chatMessages, newMessage];
-    setChatMessages(updatedMessages);
-    
-    // 채팅 메시지 저장
-    await saveChatMessages(updatedMessages);
+    // useChat 훅의 addMessage 사용
+    const updatedMessages = addMessage(newMessage);
     
     setMessage('');
     
@@ -955,9 +839,7 @@ const ChatScreen: React.FC = () => {
               type: 'ai',
             };
 
-            const updatedMessagesWithAI = [...currentMessages, aiResponse];
-            setChatMessages(updatedMessagesWithAI);
-            await saveChatMessages(updatedMessagesWithAI);
+            addMessage(aiResponse);
           } else {
             throw new Error(followUpData.error?.message || t('api.error'));
           }
@@ -970,9 +852,7 @@ const ChatScreen: React.FC = () => {
             type: 'ai',
           };
 
-          const updatedMessagesWithAI = [...currentMessages, aiResponse];
-          setChatMessages(updatedMessagesWithAI);
-          await saveChatMessages(updatedMessagesWithAI);
+          addMessage(aiResponse);
         }
       } else {
         throw new Error(data.error?.message || t('api.error'));
@@ -996,36 +876,7 @@ const ChatScreen: React.FC = () => {
   );
 
   const renderChatMessage = (message: ChatMessage) => {
-    const isUser = message.type === 'user';
-    const isRecord = message.type === 'record';
-    const isRightAligned = isUser || isRecord;
-    const isDeleted = message.memoStatus === 'deleted';
-    const isPermanentlyDeleted = message.memoStatus === 'permanentlyDeleted';
-    
-    return (
-      <View style={[styles.messageContainer, isRightAligned ? styles.userMessage : styles.aiMessage]}>
-        <View style={[
-          styles.messageBubble, 
-          isRecord ? styles.recordBubble : (isUser ? styles.userBubble : styles.aiBubble),
-          isPermanentlyDeleted && styles.permanentlyDeletedBubble
-        ]}>
-          <Text style={[
-            styles.messageText, 
-            isRecord ? styles.recordText : (isUser ? styles.userText : styles.aiText),
-            isDeleted && styles.deletedText,
-            isPermanentlyDeleted && styles.permanentlyDeletedText
-          ]}>
-            {message.content}
-          </Text>
-          <Text style={[
-            styles.messageTime, 
-            isRecord ? styles.recordTime : (isUser ? styles.userTime : styles.aiTime)
-          ]}>
-            {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-      </View>
-    );
+    return <ChatMessageComponent message={message} />;
   };
 
   const renderProcessingIndicator = () => (
@@ -1047,72 +898,55 @@ const ChatScreen: React.FC = () => {
     }
   };
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+        activeOpacity={0.7}
+      >
+        <Icon name="chevron-back" size={24} color={theme.colors.text} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>
+        {currentRoom?.title || '채팅'}
+      </Text>
+      <View style={styles.headerPlaceholder} />
+    </View>
+  );
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: theme.spacing?.md || 16,
+      paddingVertical: theme.spacing?.sm || 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    },
+    backButton: {
+      padding: theme.spacing?.xs || 4,
+    },
+    headerTitle: {
+      fontSize: getResponsiveFontSize(18),
+      fontWeight: '600',
+      color: theme.colors.text,
+      flex: 1,
+      textAlign: 'center',
+    },
+    headerPlaceholder: {
+      width: 32, // backButton과 동일한 너비로 중앙 정렬
+    },
     chatContainer: {
       flex: 1,
       paddingHorizontal: theme.spacing.sm,
     },
-    messageContainer: {
-      marginVertical: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.sm,
-    },
-    userMessage: {
-      alignItems: 'flex-end',
-    },
-    aiMessage: {
-      alignItems: 'flex-start',
-    },
-    messageBubble: {
-      maxWidth: '80%',
-      borderRadius: 18,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      marginBottom: 2,
-    },
-    userBubble: {
-      backgroundColor: theme.colors.primary,
-      borderBottomRightRadius: 4,
-    },
-    recordBubble: {
-      backgroundColor: '#4CAF50', // 초록색
-      borderBottomRightRadius: 4,
-    },
-    aiBubble: {
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderBottomLeftRadius: 4,
-    },
-    messageText: {
-      fontSize: getResponsiveFontSize(16),
-      lineHeight: 20,
-    },
-    userText: {
-      color: '#FFFFFF',
-    },
-    recordText: {
-      color: '#FFFFFF',
-    },
-    aiText: {
-      color: theme.colors.text,
-    },
-    messageTime: {
-      fontSize: getResponsiveFontSize(11),
-      marginTop: 2,
-    },
-    userTime: {
-      color: 'rgba(255, 255, 255, 0.7)',
-    },
-    recordTime: {
-      color: 'rgba(255, 255, 255, 0.7)',
-    },
-    aiTime: {
-      color: theme.colors.textSecondary,
-    },
+
     dateSeparatorContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1171,18 +1005,7 @@ const ChatScreen: React.FC = () => {
       fontSize: getResponsiveFontSize(16),
       fontWeight: '600',
     },
-    permanentlyDeletedBubble: {
-      opacity: 0.4,
-    },
-    deletedText: {
-      textDecorationLine: 'line-through',
-      textDecorationStyle: 'solid',
-    },
-    permanentlyDeletedText: {
-      textDecorationLine: 'line-through',
-      textDecorationStyle: 'solid',
-      opacity: 0.6,
-    },
+
     processingContainer: {
       marginVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.sm,
@@ -1212,6 +1035,7 @@ const ChatScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {renderHeader()}
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
