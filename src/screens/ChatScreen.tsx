@@ -39,7 +39,7 @@ const ChatScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  const { getCurrentRoom, calculateRoomMetadata } = useChatRooms();
+  const { getCurrentRoom, calculateRoomMetadata, updateRoomMetadata } = useChatRooms();
   const [message, setMessage] = useState('');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [aiProcessingStatus, setAiProcessingStatus] = useState('');
@@ -57,8 +57,14 @@ const ChatScreen: React.FC = () => {
   // 메타데이터 업데이트 콜백
   const handleMetadataUpdate = useCallback(async (roomId: string) => {
     console.log('ChatScreen: Updating metadata for room:', roomId);
-    await calculateRoomMetadata(roomId);
-  }, [calculateRoomMetadata]);
+    try {
+      const metadata = await calculateRoomMetadata(roomId);
+      await updateRoomMetadata(roomId, metadata);
+      console.log('ChatScreen: Metadata updated successfully:', metadata);
+    } catch (error) {
+      console.error('ChatScreen: Error updating metadata:', error);
+    }
+  }, [calculateRoomMetadata, updateRoomMetadata]);
   
   // useChat 훅 사용 (채팅방별 데이터 분리)
   const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(activeRoomId, handleMetadataUpdate);
@@ -705,6 +711,12 @@ const ChatScreen: React.FC = () => {
       await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
       
       console.log('handleRecord: Memo saved successfully');
+      
+      // 메모 추가 후 메타데이터 업데이트
+      if (currentRoom) {
+        await handleMetadataUpdate(currentRoom.id);
+      }
+      
       setMessage('');
     } catch (error) {
       console.error('Error saving memo:', error);

@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
 import { getResponsiveFontSize } from '../utils/dimensions';
+import { useChatRooms } from '../hooks/useChatRooms';
 
 interface ExtendedMemo extends Memo {
   isFavorite?: boolean;
@@ -28,6 +29,7 @@ const TrashScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation();
+  const { updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
   const [trashedMemos, setTrashedMemos] = useState<TrashedMemo[]>([]);
 
   useEffect(() => {
@@ -56,21 +58,33 @@ const TrashScreen: React.FC = () => {
       const memoToRestore = trashedMemos.find(memo => memo.id === id);
       if (!memoToRestore) return;
 
-      // 기존 메모들 불러오기
-      const existingMemos = await AsyncStorage.getItem('memos');
-      const memos = existingMemos ? JSON.parse(existingMemos) : [];
-      
       // 복구할 메모 (deletedAt 필드 제거)
       const { deletedAt, ...restoredMemo } = memoToRestore;
       
+      // 채팅방별 메모 키 사용
+      const memosKey = restoredMemo.roomId ? `memos_${restoredMemo.roomId}` : 'memos';
+      const existingMemos = await AsyncStorage.getItem(memosKey);
+      const memos = existingMemos ? JSON.parse(existingMemos) : [];
+      
       // 메모 목록에 추가
       memos.unshift(restoredMemo);
-      await AsyncStorage.setItem('memos', JSON.stringify(memos));
+      await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
 
-      // 휴지통에서 제거
+      // 채팅방별 휴지통 키 사용
+      const trashedMemosKey = restoredMemo.roomId ? `trashedMemos_${restoredMemo.roomId}` : 'trashedMemos';
       const updatedTrashedMemos = trashedMemos.filter(memo => memo.id !== id);
-      await AsyncStorage.setItem('trashedMemos', JSON.stringify(updatedTrashedMemos));
+      await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
       setTrashedMemos(updatedTrashedMemos);
+
+      // 메타데이터 업데이트
+      if (restoredMemo.roomId) {
+        try {
+          const metadata = await calculateRoomMetadata(restoredMemo.roomId);
+          await updateRoomMetadata(restoredMemo.roomId, metadata);
+        } catch (error) {
+          console.error('Error updating room metadata after memo restoration:', error);
+        }
+      }
 
       Alert.alert('', t('trash.restoreSuccess'));
     } catch (error) {
@@ -80,8 +94,13 @@ const TrashScreen: React.FC = () => {
 
   const permanentlyDeleteMemo = async (id: string) => {
     try {
+      const memoToDelete = trashedMemos.find(memo => memo.id === id);
+      if (!memoToDelete) return;
+
+      // 채팅방별 휴지통 키 사용
+      const trashedMemosKey = memoToDelete.roomId ? `trashedMemos_${memoToDelete.roomId}` : 'trashedMemos';
       const updatedTrashedMemos = trashedMemos.filter(memo => memo.id !== id);
-      await AsyncStorage.setItem('trashedMemos', JSON.stringify(updatedTrashedMemos));
+      await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
       setTrashedMemos(updatedTrashedMemos);
     } catch (error) {
       console.error('Error permanently deleting memo:', error);

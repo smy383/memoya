@@ -57,13 +57,16 @@ const ChatRoomsListScreen: React.FC = () => {
   // 새 채팅방 생성 모달 상태
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
-  // 화면 포커스 시 메타데이터 새로고침 (임시 비활성화)
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     console.log('ChatRoomsListScreen: Screen focused, refreshing metadata');
-  //     refreshAllRoomMetadata();
-  //   }, [refreshAllRoomMetadata])
-  // );
+  // 화면 포커스 시 메타데이터 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      console.log('ChatRoomsListScreen: Screen focused, refreshing metadata');
+      // 채팅방이 있는 경우에만 새로고침
+      if (chatRooms.length > 0) {
+        refreshAllRoomMetadata();
+      }
+    }, [refreshAllRoomMetadata, chatRooms.length])
+  );
 
   const handleRoomPress = async (roomId: string) => {
     if (isEditMode) return; // 편집 모드에서는 채팅방 이동 비활성화

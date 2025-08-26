@@ -35,7 +35,7 @@ interface TrashedMemo extends ExtendedMemo {
 const MemosScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const { chatRooms } = useChatRooms();
+  const { chatRooms, updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
   const [memos, setMemos] = useState<ExtendedMemo[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filteredMemos, setFilteredMemos] = useState<ExtendedMemo[]>([]);
@@ -182,6 +182,16 @@ const MemosScreen: React.FC = () => {
         memo.content.toLowerCase().includes(searchText.toLowerCase()) ||
         (memo.title && memo.title.toLowerCase().includes(searchText.toLowerCase()))
       ));
+
+      // 메타데이터 업데이트
+      if (memoToDelete.roomId) {
+        try {
+          const metadata = await calculateRoomMetadata(memoToDelete.roomId);
+          await updateRoomMetadata(memoToDelete.roomId, metadata);
+        } catch (error) {
+          console.error('Error updating room metadata after memo deletion:', error);
+        }
+      }
     } catch (error) {
       console.error('Error moving memo to trash:', error);
     }
