@@ -298,17 +298,13 @@ ${memoList}
           role: msg.type === 'user' ? 'user' : 'model'
         }));
 
-      // 첫 번째 요청인 경우 시스템 프롬프트를 첫 번째 메시지로 추가
-      const contents = conversationHistory.length === 0 
-        ? [
-            { parts: [{ text: systemPrompt }], role: 'user' },
-            { parts: [{ text: '메모 관리 어시스턴트로 준비되었습니다. 메모와 관련해서 무엇을 도와드릴까요?' }], role: 'model' },
-            { parts: [{ text: userMessage }], role: 'user' }
-          ]
-        : [
-            ...conversationHistory,
-            { parts: [{ text: userMessage }], role: 'user' }
-          ];
+      // 매번 시스템 프롬프트를 첫 번째 메시지로 포함
+      const contents = [
+        { parts: [{ text: systemPrompt }], role: 'user' },
+        { parts: [{ text: '메모 관리 어시스턴트로 준비되었습니다. 메모와 관련해서 무엇을 도와드릴까요?' }], role: 'model' },
+        ...conversationHistory,
+        { parts: [{ text: userMessage }], role: 'user' }
+      ];
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',

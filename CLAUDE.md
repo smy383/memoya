@@ -96,6 +96,8 @@ The project is Android-focused with vector icons configured in `android/app/buil
 
 All app data uses AsyncStorage with these keys:
 - `memos`: JSON array of memo objects
+- `trashedMemos`: JSON array of deleted memo objects with deletedAt timestamp
+- `chatMessages`: JSON array of chat conversation history
 - `isDarkMode`: Boolean theme preference
 - `selectedLanguage`: String language code
 
@@ -105,6 +107,14 @@ interface Memo {
   id: string;
   content: string;
   timestamp: Date;
+}
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  timestamp: Date;
+  type: 'user' | 'ai' | 'record';
+  memoStatus?: 'active' | 'deleted' | 'permanentlyDeleted';
 }
 ```
 
@@ -133,9 +143,25 @@ interface Memo {
 - JSON translation files in `src/i18n/locales/`
 - AsyncStorage persistence of user language choice
 
-### Future AI Integration
+### AI Integration Architecture
 
-The "Chat" functionality is architected to accept external API integration while maintaining the on-device data model. Only the chat feature will require network connectivity.
+**Memo Management Assistant**:
+- Specialized AI assistant focused exclusively on memo management tasks
+- Conversation continuity with last 10 message history for contextual responses
+- Dynamic system prompt includes real-time user memo data for current context
+- Automatic language detection and response matching (supports all 6 languages)
+- Strict role boundaries: rejects non-memo-related requests
+
+**Chat Message Types**:
+- `'user'`: User chat messages (included in conversation history)
+- `'ai'`: AI assistant responses (included in conversation history)  
+- `'record'`: Memo records (excluded from AI conversation context)
+
+**Key Implementation Rules**:
+- Record messages are NOT included in AI conversation history
+- AI assistant should request memo data when needed rather than receiving it contextually
+- System prompt regenerated for each conversation to include current memo state
+- Chat conversation maintains separation from memo recording functionality
 
 ## Development Notes
 
