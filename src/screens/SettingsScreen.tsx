@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ const SettingsScreen: React.FC = () => {
   const { theme, isDark, toggleTheme } = useTheme();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
 
+
   const openTrash = () => {
     navigation.navigate('Trash');
   };
@@ -45,6 +46,7 @@ const SettingsScreen: React.FC = () => {
       ]
     );
   };
+
 
   const styles = StyleSheet.create({
     container: {

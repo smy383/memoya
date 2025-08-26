@@ -76,4 +76,4 @@ yarn-error.log
 
 # Environment variables
 .env
-src/config/env.ts
+src/config/api.ts

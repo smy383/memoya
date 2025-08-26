@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+import { API_CONFIG } from '../config/api';
 
 interface ChatMessage {
   id: string;
@@ -174,8 +175,50 @@ const ChatScreen: React.FC = () => {
     
     setMessage('');
     
-    // TODO: AI 응답 구현
-    Alert.alert('AI Chat', 'AI chat feature coming soon!');
+    // AI 응답 처리
+    await sendToGemini(message.trim(), updatedMessages);
+  };
+
+  const sendToGemini = async (userMessage: string, currentMessages: ChatMessage[]) => {
+    try {
+      // API 설정에서 키와 모델명 가져오기
+      const apiKey = API_CONFIG.GEMINI_API_KEY;
+      const model = API_CONFIG.GEMINI_MODEL;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: userMessage
+            }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        const aiResponse: ChatMessage = {
+          id: Date.now().toString() + '_ai',
+          content: data.candidates[0].content.parts[0].text,
+          timestamp: new Date(),
+          type: 'ai',
+        };
+
+        const updatedMessagesWithAI = [...currentMessages, aiResponse];
+        setChatMessages(updatedMessagesWithAI);
+        await saveChatMessages(updatedMessagesWithAI);
+      } else {
+        throw new Error(data.error?.message || 'API 응답 오류');
+      }
+    } catch (error) {
+      console.error('Gemini API error:', error);
+      Alert.alert('AI 오류', 'AI 응답 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const renderDateSeparator = (date: string) => (
