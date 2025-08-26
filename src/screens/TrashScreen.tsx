@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
@@ -24,6 +25,7 @@ interface TrashedMemo extends ExtendedMemo {
 }
 
 const TrashScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [trashedMemos, setTrashedMemos] = useState<TrashedMemo[]>([]);

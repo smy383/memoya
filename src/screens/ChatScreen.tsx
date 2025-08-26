@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
@@ -23,6 +24,7 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   type: 'user' | 'ai' | 'record';
+  memoStatus?: 'active' | 'deleted' | 'permanentlyDeleted';
 }
 
 interface ChatListItem {
@@ -42,6 +44,25 @@ const ChatScreen: React.FC = () => {
   useEffect(() => {
     loadChatMessages();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      // 화면이 포커스될 때마다 메모 상태 업데이트
+      const updateMemoStatus = async () => {
+        const updatedMessages = await Promise.all(
+          chatMessages.map(async (msg) => ({
+            ...msg,
+            memoStatus: msg.type === 'record' ? await getMemoStatus(msg.id) : msg.memoStatus,
+          }))
+        );
+        setChatMessages(updatedMessages);
+      };
+      
+      if (chatMessages.length > 0) {
+        updateMemoStatus();
+      }
+    }, [chatMessages.length])
+  );
 
   useEffect(() => {
     groupMessagesByDate();
@@ -102,15 +123,46 @@ const ChatScreen: React.FC = () => {
       const savedMessages = await AsyncStorage.getItem('chatMessages');
       if (savedMessages) {
         const parsedMessages: ChatMessage[] = JSON.parse(savedMessages);
-        // timestamp를 Date 객체로 변환
-        const messagesWithDates = parsedMessages.map(msg => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        }));
-        setChatMessages(messagesWithDates);
+        // timestamp를 Date 객체로 변환하고 메모 상태 업데이트
+        const messagesWithStatus = await Promise.all(
+          parsedMessages.map(async (msg) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp),
+            memoStatus: msg.type === 'record' ? await getMemoStatus(msg.id) : undefined,
+          }))
+        );
+        setChatMessages(messagesWithStatus);
       }
     } catch (error) {
       console.error('Error loading chat messages:', error);
+    }
+  };
+
+  const getMemoStatus = async (memoId: string): Promise<'active' | 'deleted' | 'permanentlyDeleted'> => {
+    try {
+      // 활성 메모에서 확인
+      const activeMemos = await AsyncStorage.getItem('memos');
+      if (activeMemos) {
+        const memos = JSON.parse(activeMemos);
+        if (memos.find((memo: any) => memo.id === memoId)) {
+          return 'active';
+        }
+      }
+
+      // 휴지통에서 확인
+      const trashedMemos = await AsyncStorage.getItem('trashedMemos');
+      if (trashedMemos) {
+        const trashed = JSON.parse(trashedMemos);
+        if (trashed.find((memo: any) => memo.id === memoId)) {
+          return 'deleted';
+        }
+      }
+
+      // 둘 다 없으면 영구 삭제됨
+      return 'permanentlyDeleted';
+    } catch (error) {
+      console.error('Error checking memo status:', error);
+      return 'active'; // 오류시 기본값
     }
   };
 
@@ -130,6 +182,7 @@ const ChatScreen: React.FC = () => {
       content: message.trim(),
       timestamp: new Date(),
       type: 'record',
+      memoStatus: 'active',
     };
 
     const updatedMessages = [...chatMessages, newMessage];
@@ -150,6 +203,13 @@ const ChatScreen: React.FC = () => {
       
       memos.unshift(newMemo);
       await AsyncStorage.setItem('memos', JSON.stringify(memos));
+      
+      // 메모 저장 완료 후 메시지 상태 확인 및 업데이트
+      const finalUpdatedMessages = updatedMessages.map(msg =>
+        msg.id === newMessage.id ? { ...msg, memoStatus: 'active' as const } : msg
+      );
+      setChatMessages(finalUpdatedMessages);
+      await saveChatMessages(finalUpdatedMessages);
       
       setMessage('');
     } catch (error) {
@@ -233,16 +293,21 @@ const ChatScreen: React.FC = () => {
     const isUser = message.type === 'user';
     const isRecord = message.type === 'record';
     const isRightAligned = isUser || isRecord;
+    const isDeleted = message.memoStatus === 'deleted';
+    const isPermanentlyDeleted = message.memoStatus === 'permanentlyDeleted';
     
     return (
       <View style={[styles.messageContainer, isRightAligned ? styles.userMessage : styles.aiMessage]}>
         <View style={[
           styles.messageBubble, 
-          isRecord ? styles.recordBubble : (isUser ? styles.userBubble : styles.aiBubble)
+          isRecord ? styles.recordBubble : (isUser ? styles.userBubble : styles.aiBubble),
+          isPermanentlyDeleted && styles.permanentlyDeletedBubble
         ]}>
           <Text style={[
             styles.messageText, 
-            isRecord ? styles.recordText : (isUser ? styles.userText : styles.aiText)
+            isRecord ? styles.recordText : (isUser ? styles.userText : styles.aiText),
+            isDeleted && styles.deletedText,
+            isPermanentlyDeleted && styles.permanentlyDeletedText
           ]}>
             {message.content}
           </Text>
@@ -388,6 +453,18 @@ const ChatScreen: React.FC = () => {
       color: '#FFFFFF',
       fontSize: getResponsiveFontSize(16),
       fontWeight: '600',
+    },
+    permanentlyDeletedBubble: {
+      opacity: 0.4,
+    },
+    deletedText: {
+      textDecorationLine: 'line-through',
+      textDecorationStyle: 'solid',
+    },
+    permanentlyDeletedText: {
+      textDecorationLine: 'line-through',
+      textDecorationStyle: 'solid',
+      opacity: 0.6,
     },
   });
 
