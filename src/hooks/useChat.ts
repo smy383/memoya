@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { ChatMessage } from '../components/chat/ChatMessage';
@@ -11,7 +10,7 @@ interface ChatListItem {
     date?: string;
 }
 
-export const useChat = (roomId?: string) => {
+export const useChat = (roomId?: string, onMetadataUpdate?: (roomId: string) => void) => {
     const { t } = useTranslation();
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
@@ -68,10 +67,14 @@ export const useChat = (roomId?: string) => {
 
     const loadChatMessages = async () => {
         try {
+            console.log('useChat: Loading messages for roomId:', roomId);
             const storageKey = roomId ? `chatMessages_${roomId}` : 'chatMessages';
             const savedMessages = await AsyncStorage.getItem(storageKey);
+            console.log('useChat: Found saved messages:', !!savedMessages);
+            
             if (savedMessages) {
                 const parsedMessages: ChatMessage[] = JSON.parse(savedMessages);
+                console.log('useChat: Parsed messages count:', parsedMessages.length);
                 const messagesWithStatus = await Promise.all(
                     parsedMessages.map(async (msg) => ({
                         ...msg,
@@ -82,6 +85,7 @@ export const useChat = (roomId?: string) => {
                 setChatMessages(messagesWithStatus);
             } else {
                 // 메시지가 없으면 빈 배열로 초기화
+                console.log('useChat: No messages found, initializing empty array');
                 setChatMessages([]);
             }
         } catch (error) {
@@ -133,6 +137,12 @@ export const useChat = (roomId?: string) => {
         console.log('useChat addMessage: Updated messages count:', updatedMessages.length);
         setChatMessages(updatedMessages);
         saveChatMessages(updatedMessages);
+        
+        // 메타데이터 업데이트 콜백 호출
+        if (roomId && onMetadataUpdate) {
+            onMetadataUpdate(roomId);
+        }
+        
         return updatedMessages;
     };
 
@@ -157,12 +167,7 @@ export const useChat = (roomId?: string) => {
         groupMessagesByDate();
     }, [groupMessagesByDate]);
 
-    // 임시로 비활성화 - 디버깅용
-    // useFocusEffect(
-    //     useCallback(() => {
-    //         updateMemoStatus();
-    //     }, [updateMemoStatus])
-    // );
+
 
     return {
         chatMessages,

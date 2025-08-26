@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
@@ -44,6 +44,7 @@ const ChatRoomsListScreen: React.FC = () => {
     updateRoom,
     deleteRoom,
     setCurrentRoom,
+    refreshAllRoomMetadata,
     refetch,
   } = useChatRooms();
 
@@ -55,6 +56,14 @@ const ChatRoomsListScreen: React.FC = () => {
   
   // 새 채팅방 생성 모달 상태
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+
+  // 화면 포커스 시 메타데이터 새로고침 (임시 비활성화)
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     console.log('ChatRoomsListScreen: Screen focused, refreshing metadata');
+  //     refreshAllRoomMetadata();
+  //   }, [refreshAllRoomMetadata])
+  // );
 
   const handleRoomPress = async (roomId: string) => {
     if (isEditMode) return; // 편집 모드에서는 채팅방 이동 비활성화

@@ -29,13 +29,34 @@ export const useChatRooms = () => {
     }
   };
 
-  // 채팅방 목록 로드
-  const loadChatRooms = useCallback(async () => {
+  // 채팅방 목록 저장
+  const saveChatRooms = async (rooms: ChatRoom[]) => {
     try {
+      console.log('useChatRooms: Saving rooms:', rooms.map(r => ({ id: r.id, title: r.title })));
+      await AsyncStorage.setItem(STORAGE_KEYS.CHAT_ROOMS, JSON.stringify(rooms));
+      console.log('useChatRooms: Rooms saved successfully');
+      
+      // 저장 확인
+      const saved = await AsyncStorage.getItem(STORAGE_KEYS.CHAT_ROOMS);
+      console.log('useChatRooms: Verification - saved data exists:', !!saved);
+    } catch (error) {
+      console.error('Error saving chat rooms:', error);
+    }
+  };
+
+
+
+  // 채팅방 목록 로드
+  const loadChatRooms = async () => {
+    try {
+      console.log('useChatRooms: Loading chat rooms...');
       const savedRooms = await AsyncStorage.getItem(STORAGE_KEYS.CHAT_ROOMS);
       const savedCurrentRoomId = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_ROOM_ID);
       
-      if (savedRooms) {
+      console.log('useChatRooms: savedRooms:', savedRooms);
+      console.log('useChatRooms: savedCurrentRoomId:', savedCurrentRoomId);
+      
+      if (savedRooms && savedRooms !== 'null') {
         const rooms: ChatRoom[] = JSON.parse(savedRooms).map((room: any) => ({
           ...room,
           createdAt: new Date(room.createdAt),
@@ -45,6 +66,7 @@ export const useChatRooms = () => {
             timestamp: new Date(room.lastMessage.timestamp)
           } : undefined
         }));
+        console.log('useChatRooms: Loaded rooms:', rooms.map(r => r.id));
         setChatRooms(rooms);
         
         if (savedCurrentRoomId && rooms.find(room => room.id === savedCurrentRoomId)) {
@@ -53,39 +75,18 @@ export const useChatRooms = () => {
           setCurrentRoomId(rooms[0].id);
         }
       } else {
-        // 첫 실행시 기본 채팅방 생성
-        await createDefaultRoom();
+        // 저장된 채팅방이 없으면 빈 상태로 시작
+        console.log('useChatRooms: No saved rooms, starting with empty state');
+        setChatRooms([]);
+        setCurrentRoomId(null);
       }
     } catch (error) {
       console.error('Error loading chat rooms:', error);
+      // 오류 발생 시에도 빈 상태로 시작
+      setChatRooms([]);
+      setCurrentRoomId(null);
     } finally {
       setIsLoading(false);
-    }
-  }, []);
-
-  // 기본 채팅방 생성
-  const createDefaultRoom = async () => {
-    const defaultRoom: ChatRoom = {
-      id: 'default-room',
-      title: '기본 채팅방',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      messageCount: 0,
-      memoCount: 0,
-    };
-
-    setChatRooms([defaultRoom]);
-    setCurrentRoomId(defaultRoom.id);
-    await saveChatRooms([defaultRoom]);
-    await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, defaultRoom.id);
-  };
-
-  // 채팅방 목록 저장
-  const saveChatRooms = async (rooms: ChatRoom[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.CHAT_ROOMS, JSON.stringify(rooms));
-    } catch (error) {
-      console.error('Error saving chat rooms:', error);
     }
   };
 
@@ -116,7 +117,7 @@ export const useChatRooms = () => {
     console.log('createRoom: Set new room as current:', roomId);
     
     return newRoom;
-  }, [chatRooms, t]);
+  }, [chatRooms]);
 
   // 채팅방 업데이트
   const updateRoom = useCallback(async (roomId: string, updates: Partial<ChatRoom>) => {
@@ -158,7 +159,7 @@ export const useChatRooms = () => {
       console.error('Error deleting chat room:', error);
       throw error;
     }
-  }, [chatRooms, currentRoomId, t]);
+  }, [chatRooms, currentRoomId, safeT]);
 
   // 현재 채팅방 변경
   const setCurrentRoom = useCallback(async (roomId: string) => {
@@ -181,6 +182,66 @@ export const useChatRooms = () => {
     return currentRoomId ? chatRooms.find(room => room.id === currentRoomId) || null : null;
   }, [chatRooms, currentRoomId]);
 
+  // 실제 데이터를 기반으로 채팅방 메타데이터 계산
+  const calculateRoomMetadata = useCallback(async (roomId: string) => {
+    try {
+      // 메시지 수 계산
+      const messagesKey = `chatMessages_${roomId}`;
+      const storedMessages = await AsyncStorage.getItem(messagesKey);
+      const messages = storedMessages ? JSON.parse(storedMessages) : [];
+      const messageCount = messages.length;
+
+      // 메모 수 계산
+      const memosKey = `memos_${roomId}`;
+      const storedMemos = await AsyncStorage.getItem(memosKey);
+      const memos = storedMemos ? JSON.parse(storedMemos) : [];
+      const memoCount = memos.length;
+
+      // 마지막 메시지 찾기
+      let lastMessage: ChatRoom['lastMessage'] = undefined;
+      if (messages.length > 0) {
+        const sortedMessages = messages.sort((a: any, b: any) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        const latest = sortedMessages[0];
+        lastMessage = {
+          content: latest.content,
+          timestamp: new Date(latest.timestamp),
+          type: latest.type,
+        };
+      }
+
+      return { messageCount, memoCount, lastMessage };
+    } catch (error) {
+      console.error('Error calculating room metadata:', error);
+      return { messageCount: 0, memoCount: 0, lastMessage: undefined };
+    }
+  }, []);
+
+  // 모든 채팅방의 메타데이터 새로고침
+  const refreshAllRoomMetadata = useCallback(async () => {
+    try {
+      console.log('refreshAllRoomMetadata: Starting refresh for', chatRooms.length, 'rooms');
+      if (chatRooms.length === 0) {
+        console.log('refreshAllRoomMetadata: No rooms to refresh, skipping');
+        return;
+      }
+      
+      const updatedRooms = await Promise.all(
+        chatRooms.map(async (room) => {
+          const metadata = await calculateRoomMetadata(room.id);
+          return { ...room, ...metadata };
+        })
+      );
+      
+      console.log('refreshAllRoomMetadata: Updated rooms:', updatedRooms.map(r => r.id));
+      setChatRooms(updatedRooms);
+      await saveChatRooms(updatedRooms);
+    } catch (error) {
+      console.error('Error refreshing room metadata:', error);
+    }
+  }, [chatRooms, calculateRoomMetadata]);
+
   // 채팅방 메타데이터 업데이트 (메시지/메모 개수, 마지막 메시지)
   const updateRoomMetadata = useCallback(async (roomId: string, metadata: {
     messageCount?: number;
@@ -192,7 +253,7 @@ export const useChatRooms = () => {
 
   useEffect(() => {
     loadChatRooms();
-  }, [loadChatRooms]);
+  }, []);
 
   return {
     chatRooms,
@@ -204,6 +265,8 @@ export const useChatRooms = () => {
     setCurrentRoom,
     getCurrentRoom,
     updateRoomMetadata,
+    calculateRoomMetadata,
+    refreshAllRoomMetadata,
     refetch: loadChatRooms,
   };
 };

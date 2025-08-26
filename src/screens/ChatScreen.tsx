@@ -39,7 +39,7 @@ const ChatScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  const { getCurrentRoom } = useChatRooms();
+  const { getCurrentRoom, calculateRoomMetadata } = useChatRooms();
   const [message, setMessage] = useState('');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [aiProcessingStatus, setAiProcessingStatus] = useState('');
@@ -54,8 +54,14 @@ const ChatScreen: React.FC = () => {
   console.log('ChatScreen: Current room:', currentRoom?.id, currentRoom?.title);
   console.log('ChatScreen: Active room ID:', activeRoomId);
   
+  // 메타데이터 업데이트 콜백
+  const handleMetadataUpdate = useCallback(async (roomId: string) => {
+    console.log('ChatScreen: Updating metadata for room:', roomId);
+    await calculateRoomMetadata(roomId);
+  }, [calculateRoomMetadata]);
+  
   // useChat 훅 사용 (채팅방별 데이터 분리)
-  const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(activeRoomId);
+  const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(activeRoomId, handleMetadataUpdate);
 
 
 
