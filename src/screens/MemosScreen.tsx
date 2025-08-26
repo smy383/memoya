@@ -7,25 +7,25 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  Clipboard,
   Modal,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
+import { Clipboard } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import { Memo } from '../types';
-import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+import { getResponsiveFontSize } from '../utils/dimensions';
 import { useChatRooms } from '../hooks/useChatRooms';
 
-interface ExtendedMemo extends Memo {
+interface ExtendedMemo extends Omit<Memo, 'roomId'> {
   isFavorite?: boolean;
   title?: string;
-  roomId?: string; // 어느 채팅방에 속하는지
+  roomId?: string; // 어느 채팅방에 속하는지 (레거시 메모는 undefined 가능)
 }
 
 interface TrashedMemo extends ExtendedMemo {
@@ -109,6 +109,7 @@ const MemosScreen: React.FC = () => {
       // 시간순으로 정렬 (최신순)
       allMemos.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+      console.log('MemosScreen: Total memos loaded:', allMemos.length);
       setMemos(allMemos);
       setFilteredMemos(allMemos);
     } catch (error) {
@@ -238,10 +239,12 @@ const MemosScreen: React.FC = () => {
   };
 
   const openMemoModal = (memo: ExtendedMemo) => {
+    console.log('MemosScreen: Opening memo modal for memo:', memo.id);
     setSelectedMemo(memo);
     setEditTitle(memo.title || memo.content.substring(0, 10));
     setEditContent(memo.content);
     setIsModalVisible(true);
+    console.log('MemosScreen: Modal visibility set to true');
   };
 
   const closeMemoModal = () => {
@@ -291,7 +294,10 @@ const MemosScreen: React.FC = () => {
     <View style={styles.memoItem}>
       <TouchableOpacity
         style={styles.memoMainContent}
-        onPress={() => openMemoModal(item)}
+        onPress={() => {
+          console.log('MemosScreen: Memo item pressed:', item.id);
+          openMemoModal(item);
+        }}
         activeOpacity={0.7}
       >
         <Text style={styles.memoTitle} numberOfLines={1}>

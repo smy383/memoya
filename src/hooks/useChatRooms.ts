@@ -94,6 +94,8 @@ export const useChatRooms = () => {
     const roomId = `room-${Date.now()}`;
     const roomTitle = title || `새 채팅 ${chatRooms.length + 1}`;
     
+    console.log('createRoom: Creating new room with ID:', roomId);
+    
     const newRoom: ChatRoom = {
       id: roomId,
       title: roomTitle,
@@ -106,6 +108,12 @@ export const useChatRooms = () => {
     const updatedRooms = [...chatRooms, newRoom];
     setChatRooms(updatedRooms);
     await saveChatRooms(updatedRooms);
+    
+    // 새 채팅방을 현재 채팅방으로 설정
+    setCurrentRoomId(roomId);
+    await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, roomId);
+    
+    console.log('createRoom: Set new room as current:', roomId);
     
     return newRoom;
   }, [chatRooms, t]);
@@ -154,9 +162,17 @@ export const useChatRooms = () => {
 
   // 현재 채팅방 변경
   const setCurrentRoom = useCallback(async (roomId: string) => {
-    if (chatRooms.find(room => room.id === roomId)) {
+    console.log('setCurrentRoom: Setting current room to:', roomId);
+    console.log('setCurrentRoom: Available rooms:', chatRooms.map(r => r.id));
+    
+    // 채팅방이 존재하는지 확인하되, 새로 생성된 채팅방의 경우 바로 설정 허용
+    const roomExists = chatRooms.find(room => room.id === roomId);
+    if (roomExists || roomId.startsWith('room-')) {
+      console.log('setCurrentRoom: Room found or is new room, setting as current');
       setCurrentRoomId(roomId);
       await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, roomId);
+    } else {
+      console.log('setCurrentRoom: Room not found:', roomId);
     }
   }, [chatRooms]);
 

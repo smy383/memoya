@@ -45,13 +45,17 @@ const ChatScreen: React.FC = () => {
   const [aiProcessingStatus, setAiProcessingStatus] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
-  // 현재 채팅방 정보 가져오기
+  // 현재 채팅방 정보 가져오기 - route params 우선 사용
+  const routeRoomId = (route.params as any)?.roomId;
   const currentRoom = getCurrentRoom();
+  const activeRoomId = routeRoomId || currentRoom?.id;
   
-  console.log('ChatScreen: Current room:', currentRoom?.id);
+  console.log('ChatScreen: Route roomId:', routeRoomId);
+  console.log('ChatScreen: Current room:', currentRoom?.id, currentRoom?.title);
+  console.log('ChatScreen: Active room ID:', activeRoomId);
   
   // useChat 훅 사용 (채팅방별 데이터 분리)
-  const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(currentRoom?.id);
+  const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(activeRoomId);
 
 
 

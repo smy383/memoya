@@ -18,6 +18,7 @@ import { useChatRooms } from '../hooks/useChatRooms';
 import { ChatRoom, RootStackParamList } from '../types';
 import ChatRoomItem from '../components/chat/ChatRoomItem';
 import EditRoomNameModal from '../components/chat/EditRoomNameModal';
+import CreateRoomModal from '../components/chat/CreateRoomModal';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -51,6 +52,9 @@ const ChatRoomsListScreen: React.FC = () => {
   
   // 편집 모드 상태
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // 새 채팅방 생성 모달 상태
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
   const handleRoomPress = async (roomId: string) => {
     if (isEditMode) return; // 편집 모드에서는 채팅방 이동 비활성화
@@ -107,15 +111,15 @@ const ChatRoomsListScreen: React.FC = () => {
     if (!room) return;
 
     Alert.alert(
-      safeT('chatRooms.deleteConfirmTitle', '채팅방 삭제'),
-      safeT('chatRooms.deleteConfirmMessage', `"${room.title}" 채팅방을 삭제하시겠습니까? 모든 메시지와 메모가 삭제됩니다.`),
+      '⚠️ 채팅방 완전 삭제',
+      `"${room.title}" 채팅방을 삭제하시겠습니까?\n\n🚨 주의사항:\n• 모든 채팅 메시지가 삭제됩니다\n• 모든 메모가 삭제됩니다\n• 휴지통의 메모도 모두 삭제됩니다\n• 삭제된 데이터는 절대로 복구할 수 없습니다\n\n정말로 삭제하시겠습니까?`,
       [
         {
-          text: safeT('common.cancel', '취소'),
+          text: '취소',
           style: 'cancel',
         },
         {
-          text: safeT('common.delete', '삭제'),
+          text: '완전 삭제',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -133,10 +137,10 @@ const ChatRoomsListScreen: React.FC = () => {
     );
   };
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async (title: string) => {
     try {
-      const newRoom = await createRoom();
-      await setCurrentRoom(newRoom.id);
+      const newRoom = await createRoom(title);
+      console.log('handleCreateRoom: Created room:', newRoom.id);
       navigation.navigate('ChatRoom', { roomId: newRoom.id });
     } catch (error) {
       Alert.alert(
@@ -144,6 +148,14 @@ const ChatRoomsListScreen: React.FC = () => {
         safeT('chatRooms.createError', '새 채팅방 생성 중 오류가 발생했습니다.')
       );
     }
+  };
+
+  const handleShowCreateModal = () => {
+    setIsCreateModalVisible(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setIsCreateModalVisible(false);
   };
 
   const renderChatRoomItem = ({ item }: { item: ChatRoom }) => (
@@ -288,7 +300,7 @@ const ChatRoomsListScreen: React.FC = () => {
       {!isEditMode && (
         <TouchableOpacity
           style={styles.fab}
-          onPress={handleCreateRoom}
+          onPress={handleShowCreateModal}
           activeOpacity={0.8}
         >
           <Text style={styles.fabText}>+</Text>
@@ -300,6 +312,12 @@ const ChatRoomsListScreen: React.FC = () => {
         chatRoom={editingRoom}
         onClose={handleCloseEditModal}
         onSave={handleSaveRoomName}
+      />
+
+      <CreateRoomModal
+        visible={isCreateModalVisible}
+        onClose={handleCloseCreateModal}
+        onCreateRoom={handleCreateRoom}
       />
     </SafeAreaView>
   );
