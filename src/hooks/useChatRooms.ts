@@ -185,11 +185,11 @@ export const useChatRooms = () => {
   // 실제 데이터를 기반으로 채팅방 메타데이터 계산
   const calculateRoomMetadata = useCallback(async (roomId: string) => {
     try {
-      // 메시지 수 계산
+      // 메시지 수 계산 (메모 제외)
       const messagesKey = `chatMessages_${roomId}`;
       const storedMessages = await AsyncStorage.getItem(messagesKey);
       const messages = storedMessages ? JSON.parse(storedMessages) : [];
-      const messageCount = messages.length;
+      const messageCount = messages.filter((msg: any) => msg.type !== 'record').length;
 
       // 메모 수 계산
       const memosKey = `memos_${roomId}`;
