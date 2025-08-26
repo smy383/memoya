@@ -1,6 +1,6 @@
 {
   "tabs": {
-    "chatRooms": "Chat-Räume",
+    "chatRooms": "Chatrooms",
     "memos": "Notizen",
     "settings": "Einstellungen"
   },
@@ -13,14 +13,37 @@
   "memos": {
     "title": "Meine Notizen",
     "empty": "Noch keine Notizen",
-    "searchPlaceholder": "Notizen durchsuchen..."
+    "searchPlaceholder": "Notizen suchen..."
   },
   "settings": {
     "title": "Einstellungen",
     "darkMode": "Dunkler Modus",
     "language": "Sprache",
+    "selectLanguage": "Sprache auswählen",
     "about": "Über",
-    "version": "Version"
+    "version": "Version",
+    "appearance": "Erscheinungsbild",
+    "general": "Allgemein",
+    "dataManagementTitle": "Datenverwaltung",
+    "dataManagement": {
+      "storedDataPrefix": "Gespeicherte Daten:",
+      "itemsCount": " Elemente",
+      "objectType": "Objekt",
+      "storedDataTitle": "Gespeicherte Daten anzeigen",
+      "checkDataError": "Fehler beim Überprüfen der Daten.",
+      "testRoomTitle": "Test-Chatroom",
+      "testRoomSuccess": "Test-Chatroom wurde gespeichert.",
+      "testRoomError": "Fehler beim Speichern der Testdaten.",
+      "resetAllTitle": "⚠️ Alle Daten löschen",
+      "resetAllMessage": "Sind Sie sicher, dass Sie alle Daten löschen möchten?\\n\\n🚨 Warnung:\\n• Alle Chatrooms werden gelöscht\\n• Alle Nachrichten werden gelöscht\\n• Alle Notizen werden gelöscht\\n• Papierkorbdaten werden ebenfalls gelöscht\\n• Gelöschte Daten können nicht wiederhergestellt werden\\n\\nSie müssen die App neu starten.",
+      "resetAllConfirm": "Alle Daten löschen",
+      "resetComplete": "Abgeschlossen",
+      "resetCompleteMessage": "Alle Daten wurden gelöscht.\\nBitte starten Sie die App neu.",
+      "resetError": "Fehler beim Löschen der Daten.",
+      "checkStoredData": "Gespeicherte Daten anzeigen",
+      "saveTestRoom": "Test-Chatroom speichern",
+      "deleteAllData": "Alle Daten löschen"
+    }
   },
   "common": {
     "cancel": "Abbrechen",
@@ -32,8 +55,11 @@
     "restore": "Wiederherstellen",
     "success": "Erfolg",
     "error": "Fehler",
+    "info": "Information",
+    "saving": "Speichern...",
     "today": "Heute",
     "yesterday": "Gestern",
+    "daysAgo": "vor {{days}} Tagen",
     "korean": "한국어",
     "english": "English",
     "japanese": "日本語",
@@ -43,11 +69,11 @@
   },
   "trash": {
     "title": "Papierkorb",
-    "empty": "Der Papierkorb ist leer.",
+    "empty": "Papierkorb ist leer.",
     "restoreConfirm": "Möchten Sie diese Notiz wiederherstellen?",
-    "deleteConfirm": "Möchten Sie diese Notiz dauerhaft löschen?\nGelöschte Notizen können nicht wiederhergestellt werden.",
-    "restoreSuccess": "Die Notiz wurde wiederhergestellt.",
-    "permanentDelete": "Dauerhaft Löschen"
+    "deleteConfirm": "Möchten Sie diese Notiz endgültig löschen?\\nGelöschte Notizen können nicht wiederhergestellt werden.",
+    "restoreSuccess": "Notiz wurde wiederhergestellt.",
+    "permanentDelete": "Endgültig löschen"
   },
   "modal": {
     "memoTitle": "Notiz",
@@ -55,14 +81,86 @@
     "contentPlaceholder": "Inhalt eingeben"
   },
   "api": {
-    "error": "Ein Fehler ist bei der Verarbeitung der KI-Antwort aufgetreten.",
+    "error": "Fehler beim Verarbeiten der KI-Antwort.",
     "aiError": "KI-Fehler"
   },
   "ai": {
     "analyzing": "KI analysiert Ihre Anfrage...",
-    "searchingMemos": "Notizen werden gesucht...",
-    "analyzingStats": "Notiz-Statistiken werden analysiert...",
-    "generatingResponse": "Antwort wird generiert..."
+    "searchingMemos": "Notizen suchen...",
+    "analyzingStats": "Notizenstatistiken analysieren...",
+    "generatingSummary": "Notizenzusammenfassung erstellen...",
+    "extractingTasks": "Aufgabenelemente extrahieren...",
+    "generatingResponse": "Antwort generieren...",
+    "tools": {
+      "searchMemos": {
+        "description": "Benutzernotizen mit verschiedenen Bedingungen durchsuchen. Suche nach Datum, Stichwort oder Zeitraum.",
+        "keyword": "Suchstichwort (optional). Findet Notizen, die dieses Stichwort in ihrem Inhalt enthalten.",
+        "dateFrom": "Suchstartdatum (Format YYYY-MM-DD, optional)",
+        "dateTo": "Suchenddatum (Format YYYY-MM-DD, optional)",
+        "month": "Bestimmten Monat suchen (Format YYYY-MM, optional). z.B. '2025-08'",
+        "limit": "Maximale Anzahl zurückzugebender Notizen (Standard: 10)",
+        "found": "{{count}} Notiz(en) gefunden.",
+        "error": "Fehler beim Suchen von Notizen."
+      },
+      "getStats": {
+        "description": "Benutzer-Notizenstatistiken abrufen. Liefert Informationen wie Gesamtanzahl der Notizen, Datumsverteilung usw.",
+        "statsType": "Statistiktyp (einer von: total_count, monthly_distribution, recent_activity)",
+        "totalCount": "Sie haben insgesamt {{count}} Notiz(en).",
+        "monthlyDistribution": "Monatliche Notizenverteilung abgerufen.",
+        "recentActivity": "Hier sind die letzten {{count}} Notiz(en).",
+        "error": "Fehler beim Abrufen der Notizenstatistiken."
+      },
+      "generateSummary": {
+        "description": "Benutzernotizen zusammenfassen. Schlüsselinhalte aus nach bestimmtem Zeitraum oder Stichwörtern gefilterten Notizen extrahieren, um prägnante Zusammenfassungen zu erstellen.",
+        "dateFrom": "Startdatum der zusammenzufassenden Notizen (YYYY-MM-DD, optional)",
+        "dateTo": "Enddatum der zusammenzufassenden Notizen (YYYY-MM-DD, optional)",
+        "month": "Bestimmten Monat zusammenfassen (Format YYYY-MM, optional). z.B. '2025-08'",
+        "keyword": "Nur Notizen zu bestimmtem Stichwort zusammenfassen (optional)",
+        "summaryLength": "Zusammenfassungslängeneinstellung",
+        "noMemos": "Keine Notizen entsprechen den angegebenen Bedingungen.",
+        "noMemosMessage": "Kann keine Zusammenfassung erstellen, da keine Notizen den Bedingungen entsprechen.",
+        "success": "Zusammenfassung von {{count}} Notiz(en) erstellt.",
+        "error": "Fehler beim Erstellen der Zusammenfassung."
+      },
+      "extractTasks": {
+        "description": "Aufgaben oder Aktionselemente aus Benutzernotizen extrahieren. Erkennt Muster wie 'muss tun', 'sollte tun', 'TODO' usw., um Aktionselemente zu finden.",
+        "dateFrom": "Startdatum der Notizen zur Aufgabenextraktion (YYYY-MM-DD, optional)",
+        "dateTo": "Enddatum der Notizen zur Aufgabenextraktion (YYYY-MM-DD, optional)",
+        "keyword": "Nur Aufgaben zu bestimmtem Stichwort extrahieren (optional)",
+        "success": "{{taskCount}} Aufgabe(n) aus {{memoCount}} Notiz(en) gefunden.",
+        "error": "Fehler beim Extrahieren von Aufgaben."
+      },
+      "executeError": "Fehler beim Ausführen des Tools: {{error}}",
+      "unknownTool": "Unbekanntes Tool: {{toolName}}"
+    },
+    "systemPrompt": "Sie sind ein freundlicher und hilfreicher Notizen-Assistent. \\n- Verwenden Sie die bereitgestellten Tools nur, wenn Sie Informationen benötigen, um Fragen über die Notizen des Benutzers zu beantworten\\n- Für allgemeine Gespräche, Begrüßungen und nicht-notizbezogene Fragen antworten Sie natürlich ohne Tools zu verwenden\\n- Geben Sie prägnante und hilfreiche Antworten auf Deutsch"
+  },
+  "chatRooms": {
+    "title": "Chatrooms",
+    "defaultTitle": "Standard-Chatroom",
+    "newRoom": "Neuer Chat",
+    "current": "Aktuell",
+    "noRooms": "Keine Chatrooms",
+    "createFirstRoom": "Erstellen Sie Ihren ersten Chatroom",
+    "selectAction": "Aktion auswählen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "editNotImplemented": "Bearbeitungsfunktion kommt bald.",
+    "deleteConfirmTitle": "⚠️ Chatroom endgültig löschen",
+    "deleteConfirmMessage": "Sind Sie sicher, dass Sie den Chatroom \"{{title}}\" löschen möchten?\\n\\n🚨 Warnung:\\n• Alle Chat-Nachrichten werden gelöscht\\n• Alle Notizen werden gelöscht\\n• Papierkorbnotizen werden ebenfalls gelöscht\\n• Gelöschte Daten können nicht wiederhergestellt werden\\n\\nSind Sie sicher, dass Sie löschen möchten?",
+    "permanentDelete": "Endgültig löschen",
+    "deleteError": "Fehler beim Löschen des Chatrooms.",
+    "createError": "Fehler beim Erstellen des neuen Chatrooms.",
+    "cannotDeleteLastRoom": "Letzter Chatroom kann nicht gelöscht werden.",
+    "editTitle": "Chatroom-Namen bearbeiten",
+    "roomName": "Raumname",
+    "roomNamePlaceholder": "Raumname eingeben",
+    "emptyTitleError": "Bitte geben Sie einen Raumnamen ein.",
+    "editError": "Fehler beim Bearbeiten des Raumnamens.",
+    "titleLengthError": "Raumname muss 50 Zeichen oder weniger haben.",
+    "createNewRoom": "Neuen Chatroom erstellen",
+    "creating": "Erstellen...",
+    "create": "Erstellen"
   },
   "weekdays": ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"]
 }

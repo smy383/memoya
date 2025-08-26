@@ -19,8 +19,31 @@
     "title": "设置",
     "darkMode": "深色模式",
     "language": "语言",
+    "selectLanguage": "选择语言",
     "about": "关于",
-    "version": "版本"
+    "version": "版本",
+    "appearance": "外观",
+    "general": "通用",
+    "dataManagementTitle": "数据管理",
+    "dataManagement": {
+      "storedDataPrefix": "已保存数据：",
+      "itemsCount": "项",
+      "objectType": "对象",
+      "storedDataTitle": "查看已保存数据",
+      "checkDataError": "检查数据时发生错误。",
+      "testRoomTitle": "测试聊天室",
+      "testRoomSuccess": "测试聊天室已保存。",
+      "testRoomError": "保存测试数据时发生错误。",
+      "resetAllTitle": "⚠️ 删除所有数据",
+      "resetAllMessage": "确定要删除所有数据吗？\\n\\n🚨 警告：\\n• 所有聊天室将被删除\\n• 所有消息将被删除\\n• 所有备忘录将被删除\\n• 回收站数据也将被删除\\n• 已删除的数据无法恢复\\n\\n需要重启应用。",
+      "resetAllConfirm": "删除所有数据",
+      "resetComplete": "完成",
+      "resetCompleteMessage": "所有数据已删除。\\n请重启应用。",
+      "resetError": "删除数据时发生错误。",
+      "checkStoredData": "查看已保存数据",
+      "saveTestRoom": "保存测试聊天室",
+      "deleteAllData": "删除所有数据"
+    }
   },
   "common": {
     "cancel": "取消",
@@ -33,8 +56,10 @@
     "success": "成功",
     "error": "错误",
     "info": "信息",
+    "saving": "保存中...",
     "today": "今天",
     "yesterday": "昨天",
+    "daysAgo": "{{days}}天前",
     "korean": "한국어",
     "english": "English",
     "japanese": "日本語",
@@ -63,7 +88,52 @@
     "analyzing": "AI正在分析您的请求...",
     "searchingMemos": "正在搜索备忘录...",
     "analyzingStats": "正在分析备忘录统计...",
-    "generatingResponse": "正在生成回答..."
+    "generatingSummary": "正在生成备忘录摘要...",
+    "extractingTasks": "正在提取任务项...",
+    "generatingResponse": "正在生成回答...",
+    "tools": {
+      "searchMemos": {
+        "description": "通过各种条件搜索用户的备忘录。支持按日期、关键词或时间段搜索。",
+        "keyword": "搜索关键词（可选）。在备忘录内容中查找包含此关键词的备忘录。",
+        "dateFrom": "搜索开始日期（YYYY-MM-DD格式，可选）",
+        "dateTo": "搜索结束日期（YYYY-MM-DD格式，可选）",
+        "month": "搜索特定月份（YYYY-MM格式，可选）。例如：'2025-08'",
+        "limit": "返回的最大备忘录数量（默认：10）",
+        "found": "找到了{{count}}条备忘录。",
+        "error": "搜索备忘录时发生错误。"
+      },
+      "getStats": {
+        "description": "获取用户的备忘录统计信息。提供总备忘录数、日期分布等信息。",
+        "statsType": "统计类型（total_count、monthly_distribution、recent_activity之一）",
+        "totalCount": "总共有{{count}}条备忘录。",
+        "monthlyDistribution": "已获取月度备忘录分布。",
+        "recentActivity": "这是最近的{{count}}条备忘录。",
+        "error": "获取备忘录统计时发生错误。"
+      },
+      "generateSummary": {
+        "description": "总结用户的备忘录。从按特定时间段或关键词筛选的备忘录中提取核心内容，生成简洁摘要。",
+        "dateFrom": "要总结的备忘录开始日期（YYYY-MM-DD，可选）",
+        "dateTo": "要总结的备忘录结束日期（YYYY-MM-DD，可选）",
+        "month": "总结特定月份（YYYY-MM格式，可选）。例如：'2025-08'",
+        "keyword": "仅总结与特定关键词相关的备忘录（可选）",
+        "summaryLength": "摘要长度设置",
+        "noMemos": "没有符合指定条件的备忘录。",
+        "noMemosMessage": "由于没有符合条件的备忘录，无法生成摘要。",
+        "success": "已生成{{count}}条备忘录的摘要。",
+        "error": "生成摘要时发生错误。"
+      },
+      "extractTasks": {
+        "description": "从用户的备忘录中提取任务或操作项。识别\\\"需要做\\\"、\\\"要做\\\"、\\\"TODO\\\"等模式以找出行动项。",
+        "dateFrom": "提取任务的备忘录开始日期（YYYY-MM-DD，可选）",
+        "dateTo": "提取任务的备忘录结束日期（YYYY-MM-DD，可选）",
+        "keyword": "仅提取与特定关键词相关的任务（可选）",
+        "success": "从{{memoCount}}条备忘录中发现了{{taskCount}}个任务。",
+        "error": "提取任务时发生错误。"
+      },
+      "executeError": "执行工具时发生错误：{{error}}",
+      "unknownTool": "未知工具：{{toolName}}"
+    },
+    "systemPrompt": "您是一位友善且有帮助的备忘录助手。\\n- 仅在需要信息来回答用户关于备忘录的问题时才使用提供的工具\\n- 对于一般对话、问候和与备忘录无关的问题，请自然地回应而不使用工具\\n- 用中文提供简洁有用的回复"
   },
   "chatRooms": {
     "title": "聊天室",
@@ -76,11 +146,21 @@
     "edit": "编辑",
     "delete": "删除",
     "editNotImplemented": "编辑功能即将推出。",
-    "deleteConfirmTitle": "删除聊天室",
-    "deleteConfirmMessage": "是否确定要删除“{{title}}”聊天室？所有消息和备忘录都将被删除。",
+    "deleteConfirmTitle": "⚠️ 永久删除聊天室",
+    "deleteConfirmMessage": "确定要删除\\\"{{title}}\\\"聊天室吗？\\n\\n🚨 警告：\\n• 所有聊天消息将被删除\\n• 所有备忘录将被删除\\n• 回收站备忘录也将被删除\\n• 已删除的数据无法恢复\\n\\n确定要删除吗？",
+    "permanentDelete": "永久删除",
     "deleteError": "删除聊天室时发生错误。",
     "createError": "创建新聊天室时发生错误。",
-    "cannotDeleteLastRoom": "不能删除最后一个聊天室。"
+    "cannotDeleteLastRoom": "不能删除最后一个聊天室。",
+    "editTitle": "编辑聊天室名称",
+    "roomName": "聊天室名称",
+    "roomNamePlaceholder": "请输入聊天室名称",
+    "emptyTitleError": "请输入聊天室名称。",
+    "editError": "更改聊天室名称时发生错误。",
+    "titleLengthError": "聊天室名称不能超过50个字符。",
+    "createNewRoom": "创建新聊天室",
+    "creating": "创建中...",
+    "create": "创建"
   },
   "weekdays": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"]
 }

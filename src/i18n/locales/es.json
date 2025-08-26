@@ -19,8 +19,31 @@
     "title": "Configuración",
     "darkMode": "Modo Oscuro",
     "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma",
     "about": "Acerca de",
-    "version": "Versión"
+    "version": "Versión",
+    "appearance": "Apariencia",
+    "general": "General",
+    "dataManagementTitle": "Gestión de Datos",
+    "dataManagement": {
+      "storedDataPrefix": "Datos Almacenados:",
+      "itemsCount": " elementos",
+      "objectType": "objeto",
+      "storedDataTitle": "Ver Datos Almacenados",
+      "checkDataError": "Ocurrió un error al verificar los datos.",
+      "testRoomTitle": "Sala de Chat de Prueba",
+      "testRoomSuccess": "La sala de chat de prueba se ha guardado.",
+      "testRoomError": "Ocurrió un error al guardar los datos de prueba.",
+      "resetAllTitle": "⚠️ Eliminar Todos los Datos",
+      "resetAllMessage": "¿Está seguro de que desea eliminar todos los datos?\\n\\n🚨 Advertencia:\\n• Todas las salas de chat serán eliminadas\\n• Todos los mensajes serán eliminados\\n• Todas las notas serán eliminadas\\n• Los datos de la papelera también serán eliminados\\n• Los datos eliminados no se pueden recuperar\\n\\nNecesita reiniciar la aplicación.",
+      "resetAllConfirm": "Eliminar Todos los Datos",
+      "resetComplete": "Completo",
+      "resetCompleteMessage": "Todos los datos han sido eliminados.\\nPor favor, reinicie la aplicación.",
+      "resetError": "Ocurrió un error al eliminar los datos.",
+      "checkStoredData": "Ver Datos Almacenados",
+      "saveTestRoom": "Guardar Sala de Chat de Prueba",
+      "deleteAllData": "Eliminar Todos los Datos"
+    }
   },
   "common": {
     "cancel": "Cancelar",
@@ -32,8 +55,11 @@
     "restore": "Restaurar",
     "success": "Éxito",
     "error": "Error",
+    "info": "Información",
+    "saving": "Guardando...",
     "today": "Hoy",
     "yesterday": "Ayer",
+    "daysAgo": "hace {{days}} días",
     "korean": "한국어",
     "english": "English",
     "japanese": "日本語",
@@ -44,25 +70,97 @@
   "trash": {
     "title": "Papelera",
     "empty": "La papelera está vacía.",
-    "restoreConfirm": "¿Deseas restaurar esta nota?",
-    "deleteConfirm": "¿Deseas eliminar permanentemente esta nota?\nLas notas eliminadas no se pueden recuperar.",
+    "restoreConfirm": "¿Desea restaurar esta nota?",
+    "deleteConfirm": "¿Desea eliminar permanentemente esta nota?\\nLas notas eliminadas no se pueden recuperar.",
     "restoreSuccess": "La nota ha sido restaurada.",
     "permanentDelete": "Eliminar Permanentemente"
   },
   "modal": {
     "memoTitle": "Nota",
-    "titlePlaceholder": "Introduce el título",
-    "contentPlaceholder": "Introduce el contenido"
+    "titlePlaceholder": "Ingrese el título",
+    "contentPlaceholder": "Ingrese el contenido"
   },
   "api": {
     "error": "Ocurrió un error al procesar la respuesta de IA.",
     "aiError": "Error de IA"
   },
   "ai": {
-    "analyzing": "La IA está analizando tu solicitud...",
-    "searchingMemos": "Buscando memos...",
-    "analyzingStats": "Analizando estadísticas de memos...",
-    "generatingResponse": "Generando respuesta..."
+    "analyzing": "La IA está analizando su solicitud...",
+    "searchingMemos": "Buscando notas...",
+    "analyzingStats": "Analizando estadísticas de notas...",
+    "generatingSummary": "Generando resumen de notas...",
+    "extractingTasks": "Extrayendo elementos de tarea...",
+    "generatingResponse": "Generando respuesta...",
+    "tools": {
+      "searchMemos": {
+        "description": "Buscar notas del usuario con varias condiciones. Búsqueda por fecha, palabra clave o período de tiempo.",
+        "keyword": "Palabra clave de búsqueda (opcional). Encuentra notas que contengan esta palabra clave en su contenido.",
+        "dateFrom": "Fecha de inicio de búsqueda (formato YYYY-MM-DD, opcional)",
+        "dateTo": "Fecha de fin de búsqueda (formato YYYY-MM-DD, opcional)",
+        "month": "Buscar mes específico (formato YYYY-MM, opcional). ej. '2025-08'",
+        "limit": "Número máximo de notas a devolver (predeterminado: 10)",
+        "found": "Se encontraron {{count}} nota(s).",
+        "error": "Ocurrió un error al buscar notas."
+      },
+      "getStats": {
+        "description": "Obtener estadísticas de notas del usuario. Proporciona información como el recuento total de notas, distribución por fechas, etc.",
+        "statsType": "Tipo de estadística (uno de: total_count, monthly_distribution, recent_activity)",
+        "totalCount": "Tiene un total de {{count}} nota(s).",
+        "monthlyDistribution": "Se recuperó la distribución mensual de notas.",
+        "recentActivity": "Estas son las {{count}} nota(s) recientes.",
+        "error": "Ocurrió un error al recuperar las estadísticas de notas."
+      },
+      "generateSummary": {
+        "description": "Resumir las notas del usuario. Extraer contenido clave de notas filtradas por período específico o palabras clave para generar resúmenes concisos.",
+        "dateFrom": "Fecha de inicio de las notas a resumir (YYYY-MM-DD, opcional)",
+        "dateTo": "Fecha de fin de las notas a resumir (YYYY-MM-DD, opcional)",
+        "month": "Resumir mes específico (formato YYYY-MM, opcional). ej. '2025-08'",
+        "keyword": "Resumir solo notas relacionadas con palabra clave específica (opcional)",
+        "summaryLength": "Configuración de longitud del resumen",
+        "noMemos": "No hay notas que coincidan con las condiciones especificadas.",
+        "noMemosMessage": "No se puede generar resumen ya que no hay notas que coincidan con las condiciones.",
+        "success": "Se generó el resumen de {{count}} nota(s).",
+        "error": "Ocurrió un error al generar el resumen."
+      },
+      "extractTasks": {
+        "description": "Extraer tareas o elementos de acción de las notas del usuario. Reconoce patrones como 'necesito hacer', 'debería hacer', 'TODO', etc., para encontrar elementos de acción.",
+        "dateFrom": "Fecha de inicio de las notas para extraer tareas (YYYY-MM-DD, opcional)",
+        "dateTo": "Fecha de fin de las notas para extraer tareas (YYYY-MM-DD, opcional)",
+        "keyword": "Extraer solo tareas relacionadas con palabra clave específica (opcional)",
+        "success": "Se encontraron {{taskCount}} tarea(s) de {{memoCount}} nota(s).",
+        "error": "Ocurrió un error al extraer tareas."
+      },
+      "executeError": "Ocurrió un error al ejecutar la herramienta: {{error}}",
+      "unknownTool": "Herramienta desconocida: {{toolName}}"
+    },
+    "systemPrompt": "Eres un asistente de notas amigable y útil. \\n- Usa las herramientas proporcionadas solo cuando necesites información para responder preguntas sobre las notas del usuario\\n- Para conversaciones generales, saludos y preguntas no relacionadas con notas, responde naturalmente sin usar herramientas\\n- Proporciona respuestas concisas y útiles en español"
+  },
+  "chatRooms": {
+    "title": "Salas de Chat",
+    "defaultTitle": "Sala de Chat Predeterminada",
+    "newRoom": "Nuevo Chat",
+    "current": "Actual",
+    "noRooms": "No hay salas de chat",
+    "createFirstRoom": "Crea tu primera sala de chat",
+    "selectAction": "Selecciona una acción",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "editNotImplemented": "La función de edición estará disponible pronto.",
+    "deleteConfirmTitle": "⚠️ Eliminar Permanentemente Sala de Chat",
+    "deleteConfirmMessage": "¿Está seguro de que desea eliminar la sala de chat \"{{title}}\"?\\n\\n🚨 Advertencia:\\n• Todos los mensajes de chat serán eliminados\\n• Todas las notas serán eliminadas\\n• Las notas de la papelera también serán eliminadas\\n• Los datos eliminados no se pueden recuperar\\n\\n¿Está seguro de que desea eliminar?",
+    "permanentDelete": "Eliminar Permanentemente",
+    "deleteError": "Ocurrió un error al eliminar la sala de chat.",
+    "createError": "Ocurrió un error al crear la nueva sala de chat.",
+    "cannotDeleteLastRoom": "No se puede eliminar la última sala de chat.",
+    "editTitle": "Editar Nombre de Sala de Chat",
+    "roomName": "Nombre de la Sala",
+    "roomNamePlaceholder": "Ingrese el nombre de la sala",
+    "emptyTitleError": "Por favor, ingrese un nombre de sala.",
+    "editError": "Ocurrió un error al editar el nombre de la sala.",
+    "titleLengthError": "El nombre de la sala debe tener 50 caracteres o menos.",
+    "createNewRoom": "Crear Nueva Sala de Chat",
+    "creating": "Creando...",
+    "create": "Crear"
   },
   "weekdays": ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 }
