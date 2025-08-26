@@ -166,6 +166,47 @@ const ChatScreen: React.FC = () => {
     }
   };
 
+  const generateSystemPrompt = async (): Promise<string> => {
+    try {
+      // 사용자의 활성 메모들 가져오기
+      const activeMemos = await AsyncStorage.getItem('memos');
+      const memos = activeMemos ? JSON.parse(activeMemos) : [];
+      
+      const memoList = memos.length > 0 
+        ? memos.map((memo: any, index: number) => 
+            `${index + 1}. [${new Date(memo.timestamp).toLocaleString('ko-KR')}] ${memo.content}`
+          ).join('\n')
+        : '현재 저장된 메모가 없습니다.';
+
+      return `당신은 사용자의 메모를 관리하는 전문 메모 관리 어시스턴트입니다.
+
+## 역할과 책임
+- 사용자가 기록한 메모의 분석, 정리, 검색, 요약을 담당합니다
+- 메모 간의 연관성을 파악하고 유용한 인사이트를 제공합니다
+- 메모를 바탕으로 일정 관리, 할 일 정리, 아이디어 발전을 도와줍니다
+- 메모 내용을 기반으로 한 질문 답변과 조언을 제공합니다
+
+## 언어 대응 원칙
+- 사용자가 질문한 언어와 동일한 언어로 답변합니다
+- 한국어로 질문하면 한국어로, 영어로 질문하면 영어로, 일본어로 질문하면 일본어로 답변
+- 중국어, 스페인어, 독일어 등 다른 언어로 질문해도 해당 언어로 답변
+- 언어를 감지하여 자연스럽고 정확한 해당 언어로 응답
+
+## 제한사항
+- 메모와 직접적으로 관련되지 않은 일반적인 질문이나 업무는 수행하지 않습니다
+- 메모 관리, 정리, 분석 외의 전문 분야(의학, 법률, 투자 등)에 대한 조언은 제공하지 않습니다
+- 사용자의 메모 데이터를 기반으로 한 도움만 제공합니다
+
+## 현재 사용자의 메모 목록
+${memoList}
+
+메모와 관련된 질문이나 요청에 대해서만 도움을 드리겠습니다. 메모 외의 주제에 대한 질문을 받으면 정중하게 메모 관리 범위 내에서만 도움을 드릴 수 있다고 안내하겠습니다.`;
+    } catch (error) {
+      console.error('Error generating system prompt:', error);
+      return '메모 관리 어시스턴트입니다. 메모와 관련된 질문을 도와드리겠습니다.';
+    }
+  };
+
   const saveChatMessages = async (messages: ChatMessage[]) => {
     try {
       await AsyncStorage.setItem('chatMessages', JSON.stringify(messages));
@@ -245,17 +286,37 @@ const ChatScreen: React.FC = () => {
       const apiKey = API_CONFIG.GEMINI_API_KEY;
       const model = API_CONFIG.GEMINI_MODEL;
 
+      // 시스템 프롬프트 생성
+      const systemPrompt = await generateSystemPrompt();
+
+      // 대화 히스토리 구성 (AI와 사용자 메시지만 포함, 최근 10개로 제한)
+      const conversationHistory = currentMessages
+        .filter(msg => msg.type === 'user' || msg.type === 'ai')
+        .slice(-10)
+        .map(msg => ({
+          parts: [{ text: msg.content }],
+          role: msg.type === 'user' ? 'user' : 'model'
+        }));
+
+      // 첫 번째 요청인 경우 시스템 프롬프트를 첫 번째 메시지로 추가
+      const contents = conversationHistory.length === 0 
+        ? [
+            { parts: [{ text: systemPrompt }], role: 'user' },
+            { parts: [{ text: '메모 관리 어시스턴트로 준비되었습니다. 메모와 관련해서 무엇을 도와드릴까요?' }], role: 'model' },
+            { parts: [{ text: userMessage }], role: 'user' }
+          ]
+        : [
+            ...conversationHistory,
+            { parts: [{ text: userMessage }], role: 'user' }
+          ];
+
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: userMessage
-            }]
-          }]
+          contents: contents
         })
       });
 
