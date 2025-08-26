@@ -176,19 +176,57 @@ const ChatScreen: React.FC = () => {
     }
   };
 
-  const generateSystemPrompt = async (): Promise<string> => {
-    try {
-      // 사용자의 활성 메모들 가져오기
-      const activeMemos = await AsyncStorage.getItem('memos');
-      const memos = activeMemos ? JSON.parse(activeMemos) : [];
-      
-      const memoList = memos.length > 0 
-        ? memos.map((memo: any, index: number) => 
-            `${index + 1}. [${new Date(memo.timestamp).toLocaleString('ko-KR')}] ${memo.content}`
-          ).join('\n')
-        : '현재 저장된 메모가 없습니다.';
+  const getMemoTools = () => {
+    return [
+      {
+        name: "search_memos",
+        description: "사용자의 메모를 다양한 조건으로 검색합니다. 날짜별, 키워드별, 기간별 검색이 가능합니다.",
+        parameters: {
+          type: "object",
+          properties: {
+            keyword: {
+              type: "string",
+              description: "검색할 키워드 (선택사항). 메모 내용에서 해당 키워드를 포함한 메모를 찾습니다."
+            },
+            date_from: {
+              type: "string", 
+              description: "검색 시작 날짜 (YYYY-MM-DD 형식, 선택사항)"
+            },
+            date_to: {
+              type: "string",
+              description: "검색 종료 날짜 (YYYY-MM-DD 형식, 선택사항)"
+            },
+            month: {
+              type: "string",
+              description: "특정 월 검색 (YYYY-MM 형식, 선택사항). 예: '2025-08'"
+            },
+            limit: {
+              type: "number",
+              description: "반환할 최대 메모 개수 (기본값: 10)"
+            }
+          }
+        }
+      },
+      {
+        name: "get_memo_stats",
+        description: "사용자의 메모 통계 정보를 가져옵니다. 전체 메모 개수, 날짜별 분포 등의 정보를 제공합니다.",
+        parameters: {
+          type: "object",
+          properties: {
+            type: {
+              type: "string",
+              description: "통계 유형 (total_count, monthly_distribution, recent_activity 중 하나)",
+              enum: ["total_count", "monthly_distribution", "recent_activity"]
+            }
+          },
+          required: ["type"]
+        }
+      }
+    ];
+  };
 
-      return `당신은 사용자의 메모를 관리하는 전문 메모 관리 어시스턴트입니다.
+  const generateSystemPrompt = (): string => {
+    return `당신은 사용자의 메모를 관리하는 전문 메모 관리 어시스턴트입니다.
 
 ## 역할과 책임
 - 사용자가 기록한 메모의 분석, 정리, 검색, 요약을 담당합니다
@@ -202,18 +240,162 @@ const ChatScreen: React.FC = () => {
 - 중국어, 스페인어, 독일어 등 다른 언어로 질문해도 해당 언어로 답변
 - 언어를 감지하여 자연스럽고 정확한 해당 언어로 응답
 
+## 도구 사용 방법 (중요!)
+- 사용자가 메모에 대한 질문을 하면 MUST 반드시 적절한 도구를 사용해야 합니다
+- search_memos: 키워드 검색, 날짜별 검색, 월별 검색 시 필수 사용
+- get_memo_stats: 메모 개수, 통계, 분포 질문 시 필수 사용
+- 도구 없이는 메모 데이터에 접근할 수 없으므로 추측하거나 임의 답변을 하지 마세요
+- 예시: "메모가 몇개?" → get_memo_stats 도구 사용, "8월 메모" → search_memos 도구 사용
+
 ## 제한사항
 - 메모와 직접적으로 관련되지 않은 일반적인 질문이나 업무는 수행하지 않습니다
 - 메모 관리, 정리, 분석 외의 전문 분야(의학, 법률, 투자 등)에 대한 조언은 제공하지 않습니다
 - 사용자의 메모 데이터를 기반으로 한 도움만 제공합니다
 
-## 현재 사용자의 메모 목록
-${memoList}
-
 메모와 관련된 질문이나 요청에 대해서만 도움을 드리겠습니다. 메모 외의 주제에 대한 질문을 받으면 정중하게 메모 관리 범위 내에서만 도움을 드릴 수 있다고 안내하겠습니다.`;
+  };
+
+  const executeMemoTool = async (functionName: string, args: any) => {
+    try {
+      switch (functionName) {
+        case 'search_memos':
+          return await searchMemos(args);
+        case 'get_memo_stats':
+          return await getMemoStats(args);
+        default:
+          return {
+            success: false,
+            message: `알 수 없는 도구: ${functionName}`
+          };
+      }
     } catch (error) {
-      console.error('Error generating system prompt:', error);
-      return '메모 관리 어시스턴트입니다. 메모와 관련된 질문을 도와드리겠습니다.';
+      console.error(`Error executing tool ${functionName}:`, error);
+      return {
+        success: false,
+        message: `도구 실행 중 오류가 발생했습니다: ${error}`
+      };
+    }
+  };
+
+  const searchMemos = async (args: any) => {
+    try {
+      const activeMemos = await AsyncStorage.getItem('memos');
+      const memos = activeMemos ? JSON.parse(activeMemos) : [];
+      
+      let filteredMemos = memos;
+      
+      // 키워드 필터링
+      if (args.keyword) {
+        filteredMemos = filteredMemos.filter((memo: any) =>
+          memo.content.toLowerCase().includes(args.keyword.toLowerCase())
+        );
+      }
+      
+      // 날짜 필터링
+      if (args.date_from || args.date_to || args.month) {
+        filteredMemos = filteredMemos.filter((memo: any) => {
+          const memoDate = new Date(memo.timestamp);
+          
+          if (args.month) {
+            const monthStr = memoDate.toISOString().substring(0, 7); // YYYY-MM
+            return monthStr === args.month;
+          }
+          
+          if (args.date_from) {
+            const fromDate = new Date(args.date_from);
+            if (memoDate < fromDate) return false;
+          }
+          
+          if (args.date_to) {
+            const toDate = new Date(args.date_to + 'T23:59:59');
+            if (memoDate > toDate) return false;
+          }
+          
+          return true;
+        });
+      }
+      
+      // 개수 제한
+      const limit = args.limit || 10;
+      filteredMemos = filteredMemos.slice(0, limit);
+      
+      return {
+        success: true,
+        data: filteredMemos.map((memo: any) => ({
+          id: memo.id,
+          content: memo.content,
+          timestamp: memo.timestamp,
+          formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
+        })),
+        message: `${filteredMemos.length}개의 메모를 찾았습니다.`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: '메모 검색 중 오류가 발생했습니다.'
+      };
+    }
+  };
+
+  const getMemoStats = async (args: any) => {
+    try {
+      const activeMemos = await AsyncStorage.getItem('memos');
+      const memos = activeMemos ? JSON.parse(activeMemos) : [];
+      
+      switch (args.type) {
+        case 'total_count':
+          return {
+            success: true,
+            data: {
+              totalCount: memos.length,
+              message: `총 ${memos.length}개의 메모가 있습니다.`
+            }
+          };
+          
+        case 'monthly_distribution':
+          const monthlyStats = memos.reduce((acc: any, memo: any) => {
+            const month = new Date(memo.timestamp).toISOString().substring(0, 7);
+            acc[month] = (acc[month] || 0) + 1;
+            return acc;
+          }, {});
+          
+          return {
+            success: true,
+            data: {
+              monthlyDistribution: monthlyStats,
+              message: '월별 메모 분포를 조회했습니다.'
+            }
+          };
+          
+        case 'recent_activity':
+          const recentMemos = memos
+            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 5);
+            
+          return {
+            success: true,
+            data: {
+              recentMemos: recentMemos.map((memo: any) => ({
+                id: memo.id,
+                content: memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : ''),
+                timestamp: memo.timestamp,
+                formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
+              })),
+              message: `최근 ${recentMemos.length}개의 메모입니다.`
+            }
+          };
+          
+        default:
+          return {
+            success: false,
+            message: '지원하지 않는 통계 유형입니다.'
+          };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: '메모 통계 조회 중 오류가 발생했습니다.'
+      };
     }
   };
 
@@ -297,7 +479,7 @@ ${memoList}
       const model = API_CONFIG.GEMINI_MODEL;
 
       // 시스템 프롬프트 생성
-      const systemPrompt = await generateSystemPrompt();
+      const systemPrompt = generateSystemPrompt();
 
       // 대화 히스토리 구성 (AI와 사용자 메시지만 포함, 최근 10개로 제한)
       const conversationHistory = currentMessages
@@ -316,29 +498,107 @@ ${memoList}
         { parts: [{ text: userMessage }], role: 'user' }
       ];
 
+      // Function calling 지원을 위한 tools 추가
+      const tools = [{
+        functionDeclarations: getMemoTools()
+      }];
+      
+
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contents: contents
+          contents: contents,
+          tools: tools,
+          toolConfig: {
+            functionCallingConfig: {
+              mode: "ANY"
+            }
+          }
         })
       });
 
       const data = await response.json();
       
-      if (response.ok && data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-        const aiResponse: ChatMessage = {
-          id: Date.now().toString() + '_ai',
-          content: data.candidates[0].content.parts[0].text,
-          timestamp: new Date(),
-          type: 'ai',
-        };
+      
+      if (response.ok && data.candidates && data.candidates[0]?.content?.parts) {
+        const parts = data.candidates[0].content.parts;
+        
+        // Function call이 있는지 확인
+        const functionCall = parts.find((part: any) => part.functionCall);
+        
+        if (functionCall) {
+          // Function call 실행
+          const toolResult = await executeMemoTool(
+            functionCall.functionCall.name,
+            functionCall.functionCall.args
+          );
+          
+          // Function call 결과를 다시 AI에게 전송하여 최종 답변 생성
+          const followUpContents = [
+            ...contents,
+            {
+              parts: [{
+                functionCall: {
+                  name: functionCall.functionCall.name,
+                  args: functionCall.functionCall.args
+                }
+              }],
+              role: 'model'
+            },
+            {
+              parts: [{
+                functionResponse: {
+                  name: functionCall.functionCall.name,
+                  response: toolResult
+                }
+              }],
+              role: 'function'
+            }
+          ];
+          
+          const followUpResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: followUpContents,
+              tools: tools
+            })
+          });
+          
+          const followUpData = await followUpResponse.json();
+          
+          if (followUpResponse.ok && followUpData.candidates && followUpData.candidates[0]?.content?.parts?.[0]?.text) {
+            const aiResponse: ChatMessage = {
+              id: Date.now().toString() + '_ai',
+              content: followUpData.candidates[0].content.parts[0].text,
+              timestamp: new Date(),
+              type: 'ai',
+            };
 
-        const updatedMessagesWithAI = [...currentMessages, aiResponse];
-        setChatMessages(updatedMessagesWithAI);
-        await saveChatMessages(updatedMessagesWithAI);
+            const updatedMessagesWithAI = [...currentMessages, aiResponse];
+            setChatMessages(updatedMessagesWithAI);
+            await saveChatMessages(updatedMessagesWithAI);
+          } else {
+            throw new Error(followUpData.error?.message || t('api.error'));
+          }
+        } else if (parts[0]?.text) {
+          // 일반적인 텍스트 응답
+          const aiResponse: ChatMessage = {
+            id: Date.now().toString() + '_ai',
+            content: parts[0].text,
+            timestamp: new Date(),
+            type: 'ai',
+          };
+
+          const updatedMessagesWithAI = [...currentMessages, aiResponse];
+          setChatMessages(updatedMessagesWithAI);
+          await saveChatMessages(updatedMessagesWithAI);
+        }
       } else {
         throw new Error(data.error?.message || t('api.error'));
       }
