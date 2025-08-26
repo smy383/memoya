@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +41,8 @@ const ChatScreen: React.FC = () => {
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatListData, setChatListData] = useState<ChatListItem[]>([]);
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [aiProcessingStatus, setAiProcessingStatus] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -77,6 +80,15 @@ const ChatScreen: React.FC = () => {
       }, 100);
     }
   }, [chatListData.length]);
+
+  useEffect(() => {
+    // AI 처리 상태가 변경될 때도 하단으로 스크롤
+    if (isAIProcessing) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [isAIProcessing]);
 
   const formatDate = (date: Date): string => {
     const today = new Date();
@@ -223,6 +235,26 @@ const ChatScreen: React.FC = () => {
         }
       }
     ];
+  };
+
+  const getProcessingMessage = (functionName: string, step: 'analyzing' | 'executing' | 'generating'): string => {
+    const messages = {
+      search_memos: {
+        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
+        executing: t('ai.searchingMemos') || '메모를 검색하고 있습니다...',
+        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
+      },
+      get_memo_stats: {
+        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
+        executing: t('ai.analyzingStats') || '메모 통계를 분석중입니다...',
+        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
+      }
+    };
+
+    return messages[functionName as keyof typeof messages]?.[step] || 
+           (step === 'analyzing' ? 'AI가 요청을 분석중입니다...' : 
+            step === 'executing' ? '작업을 처리중입니다...' : 
+            '답변을 생성하고 있습니다...');
   };
 
   const generateSystemPrompt = (): string => {
@@ -474,6 +506,10 @@ const ChatScreen: React.FC = () => {
 
   const sendToGemini = async (userMessage: string, currentMessages: ChatMessage[]) => {
     try {
+      // AI 처리 시작
+      setIsAIProcessing(true);
+      setAiProcessingStatus(getProcessingMessage('', 'analyzing'));
+
       // API 설정에서 키와 모델명 가져오기
       const apiKey = API_CONFIG.GEMINI_API_KEY;
       const model = API_CONFIG.GEMINI_MODEL;
@@ -530,11 +566,17 @@ const ChatScreen: React.FC = () => {
         const functionCall = parts.find((part: any) => part.functionCall);
         
         if (functionCall) {
+          // 도구 실행 상태 표시
+          setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'executing'));
+          
           // Function call 실행
           const toolResult = await executeMemoTool(
             functionCall.functionCall.name,
             functionCall.functionCall.args
           );
+          
+          // 답변 생성 상태 표시
+          setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'generating'));
           
           // Function call 결과를 다시 AI에게 전송하여 최종 답변 생성
           const followUpContents = [
@@ -605,6 +647,10 @@ const ChatScreen: React.FC = () => {
     } catch (error) {
       console.error('Gemini API error:', error);
       Alert.alert(t('api.aiError'), t('api.error'));
+    } finally {
+      // AI 처리 완료
+      setIsAIProcessing(false);
+      setAiProcessingStatus('');
     }
   };
 
@@ -648,6 +694,17 @@ const ChatScreen: React.FC = () => {
       </View>
     );
   };
+
+  const renderProcessingIndicator = () => (
+    <View style={styles.processingContainer}>
+      <View style={styles.processingBubble}>
+        <View style={styles.processingContent}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={styles.processingText}>{aiProcessingStatus}</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   const renderChatListItem = ({ item }: { item: ChatListItem }) => {
     if (item.type === 'dateSeparator') {
@@ -793,6 +850,31 @@ const ChatScreen: React.FC = () => {
       textDecorationStyle: 'solid',
       opacity: 0.6,
     },
+    processingContainer: {
+      marginVertical: theme.spacing.xs,
+      paddingHorizontal: theme.spacing.sm,
+      alignItems: 'flex-start',
+    },
+    processingBubble: {
+      maxWidth: '80%',
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderBottomLeftRadius: 4,
+    },
+    processingContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+    },
+    processingText: {
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
+      fontStyle: 'italic',
+    },
   });
 
   return (
@@ -809,6 +891,7 @@ const ChatScreen: React.FC = () => {
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           inverted={false}
+          ListFooterComponent={isAIProcessing ? renderProcessingIndicator : null}
         />
         
         <View style={styles.inputContainer}>
