@@ -14,6 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { Memo, RootStackParamList } from '../types';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { getResponsiveFontSize } from '../utils/dimensions';
@@ -24,6 +25,7 @@ import ChatMessageComponent, { ChatMessage } from '../components/chat/ChatMessag
 import ChatInput from '../components/chat/ChatInput';
 import DateSeparator from '../components/chat/DateSeparator';
 import AIProcessingIndicator from '../components/chat/AIProcessingIndicator';
+import BannerAdComponent from '../components/ads/BannerAdComponent';
 
 interface ChatListItem {
   id: string;
@@ -36,6 +38,7 @@ type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ChatScreenRefactored: React.FC = () => {
   const { theme } = useTheme();
+  const { isPremium } = useSubscription();
   const navigation = useNavigation<NavigationProp>();
   const { getCurrentRoom } = useChatRooms();
   const [message, setMessage] = useState('');
@@ -203,6 +206,8 @@ const ChatScreenRefactored: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       {renderHeader()}
+      {/* 프리미엄이 아닌 경우에만 헤더 바로 아래 배너 광고 표시 */}
+      {!isPremium && <BannerAdComponent screenName="chat" />}
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

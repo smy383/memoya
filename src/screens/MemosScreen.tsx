@@ -307,6 +307,35 @@ const MemosScreen: React.FC = () => {
     }
   };
 
+  // 메모 목록과 광고를 혼합한 데이터 생성
+  const mixedMemoData = React.useMemo(() => {
+    if (isPremium) {
+      return filteredMemos.map(memo => ({ type: 'memo', data: memo }));
+    }
+
+    const result: Array<{ type: 'memo' | 'ad'; data?: ExtendedMemo; adIndex?: number }> = [];
+    filteredMemos.forEach((memo, index) => {
+      result.push({ type: 'memo', data: memo });
+      // 8개마다 광고 삽입 (인덱스 7, 15, 23, ... 다음에)
+      if ((index + 1) % 8 === 0 && index < filteredMemos.length - 1) {
+        result.push({ type: 'ad', adIndex: Math.floor(index / 8) });
+      }
+    });
+    return result;
+  }, [filteredMemos, isPremium]);
+
+  const renderItem = ({ item }: { item: { type: 'memo' | 'ad'; data?: ExtendedMemo; adIndex?: number } }) => {
+    if (item.type === 'ad') {
+      return <BannerAdComponent screenName="memos" />;
+    }
+    
+    if (item.data) {
+      return renderMemoItem({ item: item.data });
+    }
+    
+    return null;
+  };
+
   const renderMemoItem = ({ item }: { item: ExtendedMemo }) => (
     <View style={styles.memoItem}>
       <TouchableOpacity
@@ -492,9 +521,13 @@ const MemosScreen: React.FC = () => {
       {filteredMemos.length > 0 ? (
         <FlatList
           style={styles.memosList}
-          data={filteredMemos}
-          renderItem={renderMemoItem}
-          keyExtractor={(item) => item.id}
+          data={mixedMemoData}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => 
+            item.type === 'ad' 
+              ? `ad-${item.adIndex || index}` 
+              : item.data?.id || `item-${index}`
+          }
           showsVerticalScrollIndicator={false}
         />
       ) : (
