@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { API_CONFIG } from '../config/api';
-import { ChatMessage } from '../components/chat/ChatMessage';
+import { ChatMessage, SourceMemo } from '../components/chat/ChatMessage';
 
 export const useAI = () => {
   const { t } = useTranslation();
@@ -49,8 +49,10 @@ export const useAI = () => {
 2. **메모 정보가 실제로 필요한지 판단하세요**
 3. **필요한 경우에만 도구를 사용하세요**
 4. **불필요한 경우 자연스럽게 대화하세요**
+5. **도구를 사용한 경우, 소스 메모를 언급하지 말고 결론만 간결하게 답변하세요**
 
-사용자와 친근하고 자연스러운 대화를 나누되, 메모 관련 도움이 필요할 때만 도구를 활용하세요.`,
+사용자와 친근하고 자연스러운 대화를 나누되, 메모 관련 도움이 필요할 때만 도구를 활용하세요. 
+답변에서는 "다음 메모를 참고했습니다" 같은 소스 언급 없이 결과만 제시하세요.`,
       
       en: `You are a friendly and helpful memo assistant.
 - Use the provided tools only when you need information about the user's memos to answer a question
@@ -80,6 +82,53 @@ export const useAI = () => {
     
     return prompts[detectedLang as keyof typeof prompts] || prompts.en;
   }, [detectLanguage]);
+
+  const extractSourceMemos = useCallback((toolResult: any): SourceMemo[] => {
+    if (!toolResult || !toolResult.success || !toolResult.data) {
+      return [];
+    }
+
+    // search_memos 결과에서 소스 메모 추출
+    if (toolResult.data && Array.isArray(toolResult.data)) {
+      return toolResult.data.map((memo: any) => ({
+        id: memo.id,
+        content: memo.content,
+        timestamp: new Date(memo.timestamp),
+        formattedDate: memo.formattedDate || new Date(memo.timestamp).toLocaleString('ko-KR'),
+        relevance: 1.0, // 기본 관련도
+      }));
+    }
+
+    // generate_summary 결과에서 소스 메모 추출
+    if (toolResult.data.memos && Array.isArray(toolResult.data.memos)) {
+      return toolResult.data.memos.map((memo: any, index: number) => ({
+        id: `summary_${index}`,
+        content: memo.content,
+        timestamp: new Date(),
+        formattedDate: memo.date,
+        relevance: 0.8, // 요약에서는 약간 낮은 관련도
+      }));
+    }
+
+    // extract_tasks 결과에서 소스 메모 추출
+    if (toolResult.data.tasks && Array.isArray(toolResult.data.tasks)) {
+      const uniqueMemos = new Map();
+      toolResult.data.tasks.forEach((task: any) => {
+        if (task.memoId && task.source) {
+          uniqueMemos.set(task.memoId, {
+            id: task.memoId,
+            content: task.source,
+            timestamp: new Date(),
+            formattedDate: task.date,
+            relevance: 0.9,
+          });
+        }
+      });
+      return Array.from(uniqueMemos.values());
+    }
+
+    return [];
+  }, []);
 
   const getProcessingMessage = (functionName: string, step: 'analyzing' | 'executing' | 'generating'): string => {
     const messages = {
@@ -201,11 +250,15 @@ export const useAI = () => {
           const followUpData = await followUpResponse.json();
           
           if (followUpResponse.ok && followUpData.candidates && followUpData.candidates[0]?.content?.parts?.[0]?.text) {
+            // 소스 메모 추출
+            const sourceMemos = extractSourceMemos(toolResult);
+            
             return {
               id: Date.now().toString() + '_ai',
               content: followUpData.candidates[0].content.parts[0].text,
               timestamp: new Date(),
               type: 'ai',
+              sourceMemos: sourceMemos,
             };
           } else {
             throw new Error(followUpData.error?.message || t('api.error'));

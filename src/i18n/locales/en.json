@@ -8,7 +8,10 @@
     "placeholder": "Type your message...",
     "record": "Record",
     "chat": "Chat",
-    "recordSuccess": "Memo saved successfully!"
+    "recordSuccess": "Memo saved successfully!",
+    "sourceMemos": "{{count}} source memo",
+    "sourceMemos_plural": "{{count}} source memos",
+    "sourceMemosTitle": "Referenced Memos ({{count}})"
   },
   "memos": {
     "title": "My Memos",

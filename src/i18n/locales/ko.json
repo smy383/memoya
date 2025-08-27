@@ -8,7 +8,9 @@
     "placeholder": "메시지를 입력하세요...",
     "record": "기록",
     "chat": "채팅",
-    "recordSuccess": "메모가 성공적으로 저장되었습니다!"
+    "recordSuccess": "메모가 성공적으로 저장되었습니다!",
+    "sourceMemos": "소스 메모 {{count}}개",
+    "sourceMemosTitle": "참고한 메모 ({{count}}개)"
   },
   "memos": {
     "title": "내 메모",
