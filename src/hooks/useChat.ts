@@ -133,17 +133,23 @@ export const useChat = (roomId?: string, onMetadataUpdate?: (roomId: string) => 
     const addMessage = (message: ChatMessage) => {
         console.log('useChat addMessage: Adding message', message);
         console.log('useChat addMessage: Current messages count:', chatMessages.length);
-        const updatedMessages = [...chatMessages, message];
-        console.log('useChat addMessage: Updated messages count:', updatedMessages.length);
-        setChatMessages(updatedMessages);
-        saveChatMessages(updatedMessages);
         
-        // 메타데이터 업데이트 콜백 호출
-        if (roomId && onMetadataUpdate) {
-            onMetadataUpdate(roomId);
-        }
+        setChatMessages(prevMessages => {
+            const updatedMessages = [...prevMessages, message];
+            console.log('useChat addMessage: Updated messages count:', updatedMessages.length);
+            
+            // 비동기 작업들을 별도로 처리
+            saveChatMessages(updatedMessages);
+            
+            if (roomId && onMetadataUpdate) {
+                onMetadataUpdate(roomId);
+            }
+            
+            return updatedMessages;
+        });
         
-        return updatedMessages;
+        // 현재 상태 + 새 메시지를 반환 (동기적)
+        return [...chatMessages, message];
     };
 
     const updateMemoStatus = useCallback(async () => {

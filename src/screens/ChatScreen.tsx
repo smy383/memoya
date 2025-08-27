@@ -21,9 +21,10 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Memo, RootStackParamList } from '../types';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { useChat } from '../hooks/useChat';
+import { useAI } from '../hooks/useAI';
 import ChatMessageComponent, { ChatMessage } from '../components/chat/ChatMessage';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
-import { API_CONFIG } from '../config/api';
+import { getMemoTools, executeMemoTool } from '../services/memoTools';
 
 interface ChatListItem {
   id: string;
@@ -40,9 +41,8 @@ const ChatScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   const { getCurrentRoom, calculateRoomMetadata, updateRoomMetadata } = useChatRooms();
+  const { isAIProcessing, aiProcessingStatus, sendToAI } = useAI();
   const [message, setMessage] = useState('');
-  const [isAIProcessing, setIsAIProcessing] = useState(false);
-  const [aiProcessingStatus, setAiProcessingStatus] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
   // 현재 채팅방 정보 가져오기 - route params 우선 사용
@@ -50,17 +50,13 @@ const ChatScreen: React.FC = () => {
   const currentRoom = getCurrentRoom();
   const activeRoomId = routeRoomId || currentRoom?.id;
   
-  console.log('ChatScreen: Route roomId:', routeRoomId);
-  console.log('ChatScreen: Current room:', currentRoom?.id, currentRoom?.title);
-  console.log('ChatScreen: Active room ID:', activeRoomId);
+
   
   // 메타데이터 업데이트 콜백
   const handleMetadataUpdate = useCallback(async (roomId: string) => {
-    console.log('ChatScreen: Updating metadata for room:', roomId);
     try {
       const metadata = await calculateRoomMetadata(roomId);
       await updateRoomMetadata(roomId, metadata);
-      console.log('ChatScreen: Metadata updated successfully:', metadata);
     } catch (error) {
       console.error('ChatScreen: Error updating metadata:', error);
     }
@@ -68,8 +64,6 @@ const ChatScreen: React.FC = () => {
   
   // useChat 훅 사용 (채팅방별 데이터 분리)
   const { chatMessages, chatListData, setChatMessages, addMessage, saveChatMessages } = useChat(activeRoomId, handleMetadataUpdate);
-
-
 
   useEffect(() => {
     // 새 메시지가 추가되면 하단으로 스크롤
@@ -89,596 +83,8 @@ const ChatScreen: React.FC = () => {
     }
   }, [isAIProcessing]);
 
-
-
-
-
-  const getMemoTools = () => {
-    return [
-      {
-        name: "search_memos",
-        description: t('ai.tools.searchMemos.description'),
-        parameters: {
-          type: "object",
-          properties: {
-            keyword: {
-              type: "string",
-              description: t('ai.tools.searchMemos.keyword')
-            },
-            date_from: {
-              type: "string", 
-              description: t('ai.tools.searchMemos.dateFrom')
-            },
-            date_to: {
-              type: "string",
-              description: t('ai.tools.searchMemos.dateTo')
-            },
-            month: {
-              type: "string",
-              description: t('ai.tools.searchMemos.month')
-            },
-            limit: {
-              type: "number",
-              description: t('ai.tools.searchMemos.limit')
-            }
-          }
-        }
-      },
-      {
-        name: "get_memo_stats",
-        description: t('ai.tools.getStats.description'),
-        parameters: {
-          type: "object",
-          properties: {
-            type: {
-              type: "string",
-              description: t('ai.tools.getStats.statsType'),
-              enum: ["total_count", "monthly_distribution", "recent_activity"]
-            }
-          },
-          required: ["type"]
-        }
-      },
-      {
-        name: "generate_summary",
-        description: t('ai.tools.generateSummary.description'),
-        parameters: {
-          type: "object",
-          properties: {
-            date_from: {
-              type: "string",
-              description: t('ai.tools.generateSummary.dateFrom')
-            },
-            date_to: {
-              type: "string", 
-              description: t('ai.tools.generateSummary.dateTo')
-            },
-            month: {
-              type: "string",
-              description: t('ai.tools.generateSummary.month')
-            },
-            keyword: {
-              type: "string",
-              description: t('ai.tools.generateSummary.keyword')
-            },
-            summary_length: {
-              type: "string",
-              description: t('ai.tools.generateSummary.summaryLength'),
-              enum: ["brief", "detailed", "comprehensive"]
-            }
-          }
-        }
-      },
-      {
-        name: "extract_tasks",
-        description: t('ai.tools.extractTasks.description'),
-        parameters: {
-          type: "object",
-          properties: {
-            date_from: {
-              type: "string",
-              description: t('ai.tools.extractTasks.dateFrom')
-            },
-            date_to: {
-              type: "string",
-              description: t('ai.tools.extractTasks.dateTo')
-            },
-            keyword: {
-              type: "string",
-              description: t('ai.tools.extractTasks.keyword')
-            }
-          }
-        }
-      }
-    ];
-  };
-
-  const getProcessingMessage = (functionName: string, step: 'analyzing' | 'executing' | 'generating'): string => {
-    const messages = {
-      search_memos: {
-        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
-        executing: t('ai.searchingMemos') || '메모를 검색하고 있습니다...',
-        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
-      },
-      get_memo_stats: {
-        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
-        executing: t('ai.analyzingStats') || '메모 통계를 분석중입니다...',
-        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
-      },
-      generate_summary: {
-        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
-        executing: t('ai.generatingSummary') || '메모 요약을 생성하고 있습니다...',
-        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
-      },
-      extract_tasks: {
-        analyzing: t('ai.analyzing') || 'AI가 요청을 분석중입니다...',
-        executing: t('ai.extractingTasks') || '할일 항목을 추출하고 있습니다...',
-        generating: t('ai.generatingResponse') || '답변을 생성하고 있습니다...'
-      }
-    };
-
-    return messages[functionName as keyof typeof messages]?.[step] || 
-           (step === 'analyzing' ? 'AI가 요청을 분석중입니다...' : 
-            step === 'executing' ? '작업을 처리중입니다...' : 
-            '답변을 생성하고 있습니다...');
-  };
-
-  const detectLanguage = (text: string): string => {
-    // 한국어 감지 (한글 문자가 포함되어 있으면)
-    if (/[가-힣]/.test(text)) return 'ko';
-    // 일본어 감지 (히라가나, 가타카나가 포함되어 있으면)
-    if (/[ひらがなカタカナ]/.test(text)) return 'ja';
-    // 중국어 감지 (중국어 간체/번체 문자가 포함되어 있으면)
-    if (/[\u4e00-\u9fff]/.test(text)) return 'zh';
-    // 스페인어 감지 (스페인어 특수문자가 포함되어 있으면)
-    if (/[ñáéíóúü¿¡]/.test(text.toLowerCase())) return 'es';
-    // 독일어 감지 (독일어 특수문자가 포함되어 있으면)
-    if (/[äöüß]/.test(text.toLowerCase())) return 'de';
-    // 기본값은 영어
-    return 'en';
-  };
-
-  const generateSystemPrompt = (userMessage: string): string => {
-    const detectedLang = detectLanguage(userMessage);
-    
-    const prompts = {
-      ko: `당신은 친근하고 도움이 되는 메모 어시스턴트입니다. 
-- 사용자의 메모에 대한 질문에 답하기 위해 정보가 필요할 때만 제공된 도구를 사용하세요
-- 일반적인 대화, 인사말, 메모와 관련 없는 질문에는 도구 없이 자연스럽게 응답하세요
-- 답변은 한국어로 간결하고 도움이 되도록 작성하세요`,
-      
-      en: `You are a friendly and helpful memo assistant.
-- Use the provided tools only when you need information about the user's memos to answer a question
-- For general conversations, greetings, or questions not related to memos, respond naturally without using tools
-- Provide concise and helpful responses in English`,
-      
-      ja: `あなたは親しみやすく役立つメモアシスタントです。
-- ユーザーのメモに関する質問に答えるために情報が必要な場合のみ、提供されたツールを使用してください
-- 一般的な会話、挨拶、メモに関係のない質問には、ツールを使わずに自然に応答してください
-- 日本語で簡潔で役立つ回答を提供してください`,
-      
-      zh: `您是一个友好且有用的备忘录助手。
-- 只有在需要用户备忘录信息来回答问题时才使用提供的工具
-- 对于一般对话、问候或与备忘录无关的问题，请在不使用工具的情况下自然回应
-- 请用中文提供简洁有用的回答`,
-      
-      es: `Eres un asistente de notas amigable y útil.
-- Usa las herramientas proporcionadas solo cuando necesites información sobre las notas del usuario para responder una pregunta
-- Para conversaciones generales, saludos o preguntas no relacionadas con notas, responde naturalmente sin usar herramientas
-- Proporciona respuestas concisas y útiles en español`,
-      
-      de: `Sie sind ein freundlicher und hilfreicher Notiz-Assistent.
-- Verwenden Sie die bereitgestellten Tools nur, wenn Sie Informationen über die Notizen des Benutzers benötigen, um eine Frage zu beantworten
-- Für allgemeine Gespräche, Begrüßungen oder Fragen, die nicht mit Notizen zusammenhängen, antworten Sie natürlich ohne Tools
-- Geben Sie prägnante und hilfreiche Antworten auf Deutsch`
-    };
-    
-    return prompts[detectedLang as keyof typeof prompts] || prompts.en;
-  };
-
-  const executeMemoTool = async (functionName: string, args: any) => {
-    try {
-      switch (functionName) {
-        case 'search_memos':
-          return await searchMemos(args);
-        case 'get_memo_stats':
-          return await getMemoStats(args);
-        case 'generate_summary':
-          return await generateSummary(args);
-        case 'extract_tasks':
-          return await extractTasks(args);
-        default:
-          return {
-            success: false,
-            message: t('ai.tools.unknownTool', { toolName: functionName })
-          };
-      }
-    } catch (error) {
-      console.error(`Error executing tool ${functionName}:`, error);
-      return {
-        success: false,
-        message: t('ai.tools.executeError', { error })
-      };
-    }
-  };
-
-  const searchMemos = async (args: any) => {
-    try {
-      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
-      const activeMemos = await AsyncStorage.getItem(memosKey);
-      const memos = activeMemos ? JSON.parse(activeMemos) : [];
-      
-      let filteredMemos = memos;
-      
-      // 키워드 필터링
-      if (args.keyword) {
-        filteredMemos = filteredMemos.filter((memo: any) =>
-          memo.content.toLowerCase().includes(args.keyword.toLowerCase())
-        );
-      }
-      
-      // 날짜 필터링
-      if (args.date_from || args.date_to || args.month) {
-        filteredMemos = filteredMemos.filter((memo: any) => {
-          const memoDate = new Date(memo.timestamp);
-          
-          if (args.month) {
-            const monthStr = memoDate.toISOString().substring(0, 7); // YYYY-MM
-            return monthStr === args.month;
-          }
-          
-          if (args.date_from) {
-            const fromDate = new Date(args.date_from);
-            if (memoDate < fromDate) return false;
-          }
-          
-          if (args.date_to) {
-            const toDate = new Date(args.date_to + 'T23:59:59');
-            if (memoDate > toDate) return false;
-          }
-          
-          return true;
-        });
-      }
-      
-      // 개수 제한
-      const limit = args.limit || 10;
-      filteredMemos = filteredMemos.slice(0, limit);
-      
-      return {
-        success: true,
-        data: filteredMemos.map((memo: any) => ({
-          id: memo.id,
-          content: memo.content,
-          timestamp: memo.timestamp,
-          formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
-        })),
-        message: t('ai.tools.searchMemos.found', { count: filteredMemos.length })
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: t('ai.tools.searchMemos.error')
-      };
-    }
-  };
-
-  const generateSummary = async (args: any) => {
-    try {
-      // 메모 로드 및 필터링 (search_memos와 유사한 로직)
-      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
-      const activeMemos = await AsyncStorage.getItem(memosKey);
-      const memos = activeMemos ? JSON.parse(activeMemos) : [];
-      
-      let filteredMemos = memos;
-      
-      // 키워드 필터링
-      if (args.keyword) {
-        filteredMemos = filteredMemos.filter((memo: any) =>
-          memo.content.toLowerCase().includes(args.keyword.toLowerCase())
-        );
-      }
-      
-      // 날짜 필터링
-      if (args.date_from || args.date_to || args.month) {
-        filteredMemos = filteredMemos.filter((memo: any) => {
-          const memoDate = new Date(memo.timestamp);
-          
-          if (args.month) {
-            const monthStr = memoDate.toISOString().substring(0, 7); // YYYY-MM
-            return monthStr === args.month;
-          }
-          
-          if (args.date_from) {
-            const fromDate = new Date(args.date_from);
-            if (memoDate < fromDate) return false;
-          }
-          
-          if (args.date_to) {
-            const toDate = new Date(args.date_to + 'T23:59:59');
-            if (memoDate > toDate) return false;
-          }
-          
-          return true;
-        });
-      }
-      
-      if (filteredMemos.length === 0) {
-        return {
-          success: true,
-          data: {
-            totalMemos: 0,
-            summary: '지정된 조건에 해당하는 메모가 없습니다.',
-            keyTopics: [],
-            timeRange: getTimeRangeText(args)
-          },
-          message: '조건에 맞는 메모가 없어 요약을 생성할 수 없습니다.'
-        };
-      }
-      
-      // 요약 데이터 생성
-      const keyTopics = extractKeyTopics(filteredMemos);
-      const summary = createSummaryText(filteredMemos, args.summary_length || 'brief');
-      
-      return {
-        success: true,
-        data: {
-          totalMemos: filteredMemos.length,
-          summary: summary,
-          keyTopics: keyTopics,
-          timeRange: getTimeRangeText(args),
-          memos: filteredMemos.slice(0, 5).map((memo: any) => ({
-            content: memo.content.substring(0, 100) + (memo.content.length > 100 ? '...' : ''),
-            date: new Date(memo.timestamp).toLocaleString('ko-KR', { 
-              month: 'short', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit' 
-            })
-          }))
-        },
-        message: `${filteredMemos.length}개 메모의 요약을 생성했습니다.`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: t('ai.tools.generateSummary.error')
-      };
-    }
-  };
-
-  const extractKeyTopics = (memos: any[]): string[] => {
-    const allText = memos.map(memo => memo.content).join(' ').toLowerCase();
-    const words = allText.match(/\b[가-힣]{2,}|[a-zA-Z]{3,}\b/g) || [];
-    
-    // 단어 빈도 계산
-    const wordCount: { [key: string]: number } = {};
-    words.forEach(word => {
-      if (word.length > 2) { // 2글자 이상만
-        wordCount[word] = (wordCount[word] || 0) + 1;
-      }
-    });
-    
-    // 빈도 순으로 정렬하고 상위 5개 반환
-    return Object.entries(wordCount)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([word]) => word);
-  };
-
-  const createSummaryText = (memos: any[], length: string): string => {
-    const totalMemos = memos.length;
-    const dateRange = {
-      oldest: new Date(Math.min(...memos.map(m => new Date(m.timestamp).getTime()))),
-      newest: new Date(Math.max(...memos.map(m => new Date(m.timestamp).getTime())))
-    };
-    
-    let summary = `총 ${totalMemos}개의 메모가 있습니다. `;
-    
-    if (totalMemos > 1) {
-      const daysDiff = Math.ceil((dateRange.newest.getTime() - dateRange.oldest.getTime()) / (1000 * 60 * 60 * 24));
-      summary += `${dateRange.oldest.toLocaleDateString('ko-KR')}부터 ${dateRange.newest.toLocaleDateString('ko-KR')}까지 ${daysDiff}일 동안 작성되었습니다. `;
-    }
-    
-    if (length === 'detailed' || length === 'comprehensive') {
-      // 최근 몇 개 메모의 핵심 내용 포함
-      const recentMemos = memos.slice(0, Math.min(3, totalMemos));
-      summary += '\n\n주요 내용:\n';
-      recentMemos.forEach((memo, index) => {
-        const preview = memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : '');
-        summary += `${index + 1}. ${preview}\n`;
-      });
-    }
-    
-    return summary;
-  };
-
-  const getTimeRangeText = (args: any): string => {
-    if (args.month) return `${args.month}월`;
-    if (args.date_from && args.date_to) return `${args.date_from} ~ ${args.date_to}`;
-    if (args.date_from) return `${args.date_from} 이후`;
-    if (args.date_to) return `${args.date_to} 이전`;
-    return '전체 기간';
-  };
-
-  const extractTasks = async (args: any) => {
-    try {
-      // 메모 로드 및 필터링
-      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
-      const activeMemos = await AsyncStorage.getItem(memosKey);
-      const memos = activeMemos ? JSON.parse(activeMemos) : [];
-      
-      let filteredMemos = memos;
-      
-      // 키워드 필터링
-      if (args.keyword) {
-        filteredMemos = filteredMemos.filter((memo: any) =>
-          memo.content.toLowerCase().includes(args.keyword.toLowerCase())
-        );
-      }
-      
-      // 날짜 필터링
-      if (args.date_from || args.date_to) {
-        filteredMemos = filteredMemos.filter((memo: any) => {
-          const memoDate = new Date(memo.timestamp);
-          
-          if (args.date_from) {
-            const fromDate = new Date(args.date_from);
-            if (memoDate < fromDate) return false;
-          }
-          
-          if (args.date_to) {
-            const toDate = new Date(args.date_to + 'T23:59:59');
-            if (memoDate > toDate) return false;
-          }
-          
-          return true;
-        });
-      }
-      
-      // 작업 항목 추출
-      const tasks: any[] = [];
-      
-      filteredMemos.forEach((memo: any) => {
-        const extractedTasks = findTasksInText(memo.content);
-        extractedTasks.forEach(task => {
-          tasks.push({
-            task: task,
-            source: memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : ''),
-            date: new Date(memo.timestamp).toLocaleDateString('ko-KR'),
-            memoId: memo.id
-          });
-        });
-      });
-      
-      return {
-        success: true,
-        data: {
-          tasks: tasks,
-          totalTasks: tasks.length,
-          totalMemos: filteredMemos.length,
-          timeRange: getTimeRangeText(args)
-        },
-        message: `${filteredMemos.length}개 메모에서 ${tasks.length}개의 작업을 발견했습니다.`
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: t('ai.tools.extractTasks.error')
-      };
-    }
-  };
-
-  const findTasksInText = (text: string): string[] => {
-    const tasks: string[] = [];
-    
-    // 할일 패턴들
-    const patterns = [
-      /(.{0,20})(해야\s*(?:할|하는)\s*(?:일|것|거))(.{0,30})/gi,
-      /(.{0,20})(\w+하기)(.{0,30})/gi,
-      /(todo\s*:?\s*)(.+?)(?=\n|$)/gi,
-      /(.{0,20})(해봐야겠다|해야겠다|하자)(.{0,20})/gi,
-      /([※-]\s*)(.+?)(?=\n|$)/gi,
-      /(\d+\.\s*)(.+?)(?=\n|$)/gi,
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = text.matchAll(pattern);
-      for (const match of matches) {
-        let task = '';
-        if (match[2] && match[2].trim()) {
-          // 패턴에 맞는 부분 추출
-          task = match[0].trim();
-        }
-        
-        if (task && task.length > 3 && task.length < 100) {
-          // 중복 제거 및 정리
-          const cleanTask = task
-            .replace(/^\d+\.\s*/, '') // 숫자 제거
-            .replace(/^[※-]\s*/, '') // 기호 제거
-            .replace(/^todo\s*:?\s*/gi, '') // TODO 제거
-            .trim();
-          
-          if (cleanTask && !tasks.some(existing => existing.includes(cleanTask) || cleanTask.includes(existing))) {
-            tasks.push(cleanTask);
-          }
-        }
-      }
-    });
-    
-    return tasks.slice(0, 10); // 최대 10개까지
-  };
-
-  const getMemoStats = async (args: any) => {
-    try {
-      const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
-      const activeMemos = await AsyncStorage.getItem(memosKey);
-      const memos = activeMemos ? JSON.parse(activeMemos) : [];
-      
-      switch (args.type) {
-        case 'total_count':
-          return {
-            success: true,
-            data: {
-              totalCount: memos.length,
-              message: `총 ${memos.length}개의 메모가 있습니다.`
-            }
-          };
-          
-        case 'monthly_distribution':
-          const monthlyStats = memos.reduce((acc: any, memo: any) => {
-            const month = new Date(memo.timestamp).toISOString().substring(0, 7);
-            acc[month] = (acc[month] || 0) + 1;
-            return acc;
-          }, {});
-          
-          return {
-            success: true,
-            data: {
-              monthlyDistribution: monthlyStats,
-              message: '월별 메모 분포를 조회했습니다.'
-            }
-          };
-          
-        case 'recent_activity':
-          const recentMemos = memos
-            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-            .slice(0, 5);
-            
-          return {
-            success: true,
-            data: {
-              recentMemos: recentMemos.map((memo: any) => ({
-                id: memo.id,
-                content: memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : ''),
-                timestamp: memo.timestamp,
-                formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
-              })),
-              message: `최근 ${recentMemos.length}개의 메모입니다.`
-            }
-          };
-          
-        default:
-          return {
-            success: false,
-            message: '지원하지 않는 통계 유형입니다.'
-          };
-      }
-    } catch (error) {
-      return {
-        success: false,
-        message: t('ai.tools.getStats.error')
-      };
-    }
-  };
-
-
-
   const handleRecord = async () => {
     if (!message.trim()) return;
-
-    console.log('handleRecord: Starting record process');
-    console.log('Current room:', currentRoom?.id);
 
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -688,11 +94,8 @@ const ChatScreen: React.FC = () => {
       memoStatus: 'active',
     };
 
-    console.log('handleRecord: Created new message:', newMessage);
-
     // useChat 훅의 addMessage 사용
     const updatedMessages = addMessage(newMessage);
-    console.log('handleRecord: Added message, total messages:', updatedMessages.length);
 
     try {
       const newMemo: Memo = {
@@ -702,15 +105,12 @@ const ChatScreen: React.FC = () => {
       };
 
       const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';
-      console.log('handleRecord: Saving memo with key:', memosKey);
       
       const existingMemos = await AsyncStorage.getItem(memosKey);
       const memos = existingMemos ? JSON.parse(existingMemos) : [];
       
       memos.unshift(newMemo);
       await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
-      
-      console.log('handleRecord: Memo saved successfully');
       
       // 메모 추가 후 메타데이터 업데이트
       if (currentRoom) {
@@ -726,166 +126,41 @@ const ChatScreen: React.FC = () => {
   const handleChat = async () => {
     if (!message.trim()) return;
 
+    const userMessage = message.trim();
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
-      content: message.trim(),
+      content: userMessage,
       timestamp: new Date(),
       type: 'user',
     };
 
+    console.log('handleChat: Adding user message:', userMessage);
+    
     // useChat 훅의 addMessage 사용
-    const updatedMessages = addMessage(newMessage);
+    addMessage(newMessage);
     
     setMessage('');
     
-    // AI 응답 처리
-    await sendToGemini(message.trim(), updatedMessages);
-  };
-
-  const sendToGemini = async (userMessage: string, currentMessages: ChatMessage[]) => {
+    // AI 응답 처리 - 현재 메시지 배열에 새 메시지를 추가한 배열을 전달
     try {
-      // AI 처리 시작
-      setIsAIProcessing(true);
-      setAiProcessingStatus(getProcessingMessage('', 'analyzing'));
-
-      // API 설정에서 키와 모델명 가져오기
-      const apiKey = API_CONFIG.GEMINI_API_KEY;
-      const model = API_CONFIG.GEMINI_MODEL;
-
-      // 시스템 프롬프트 생성 (사용자 메시지 언어에 맞춰)
-      const systemPrompt = generateSystemPrompt(userMessage);
-
-      // 대화 히스토리 구성 (AI와 사용자 메시지만 포함, 최근 10개로 제한)
-      const conversationHistory = currentMessages
-        .filter(msg => msg.type === 'user' || msg.type === 'ai')
-        .slice(-10)
-        .map(msg => ({
-          parts: [{ text: msg.content }],
-          role: msg.type === 'user' ? 'user' : 'model'
-        }));
-
-      // 대화 연속성을 위해 히스토리 포함
-      const contents = [
-        { parts: [{ text: systemPrompt }], role: 'user' },
-        ...conversationHistory,
-        { parts: [{ text: userMessage }], role: 'user' }
-      ];
-
-      // Function calling 지원을 위한 tools 추가
-      const tools = [{
-        functionDeclarations: getMemoTools()
-      }];
+      const memoTools = getMemoTools(t);
+      const executeTool = (functionName: string, args: any) => 
+        executeMemoTool(functionName, args, activeRoomId, t);
       
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: contents,
-          tools: tools,
-          toolConfig: {
-            functionCallingConfig: {
-              mode: "ANY"
-            }
-          }
-        })
-      });
-
-      const data = await response.json();
+      // 현재 메시지 배열에 새로 추가된 사용자 메시지를 포함한 배열 생성
+      const messagesForAI = [...chatMessages, newMessage];
       
-      // 디버깅을 위한 응답 로깅
-      console.log('Gemini API Response:', JSON.stringify(data, null, 2));
+      console.log('handleChat: Calling AI with messages count:', messagesForAI.length);
       
-      if (response.ok && data.candidates && data.candidates[0]?.content?.parts) {
-        const parts = data.candidates[0].content.parts;
-        
-        // Function call이 있는지 확인
-        const functionCall = parts.find((part: any) => part.functionCall);
-        
-        if (functionCall) {
-          // 도구 실행 상태 표시
-          setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'executing'));
-          
-          // Function call 실행
-          const toolResult = await executeMemoTool(
-            functionCall.functionCall.name,
-            functionCall.functionCall.args
-          );
-          
-          // 답변 생성 상태 표시
-          setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'generating'));
-          
-          // Function call 결과를 다시 AI에게 전송하여 최종 답변 생성
-          const followUpContents = [
-            ...contents,
-            {
-              parts: [{
-                functionCall: {
-                  name: functionCall.functionCall.name,
-                  args: functionCall.functionCall.args
-                }
-              }],
-              role: 'model'
-            },
-            {
-              parts: [{
-                functionResponse: {
-                  name: functionCall.functionCall.name,
-                  response: toolResult
-                }
-              }],
-              role: 'function'
-            }
-          ];
-          
-          const followUpResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              contents: followUpContents,
-              tools: tools
-            })
-          });
-          
-          const followUpData = await followUpResponse.json();
-          
-          if (followUpResponse.ok && followUpData.candidates && followUpData.candidates[0]?.content?.parts?.[0]?.text) {
-            const aiResponse: ChatMessage = {
-              id: Date.now().toString() + '_ai',
-              content: followUpData.candidates[0].content.parts[0].text,
-              timestamp: new Date(),
-              type: 'ai',
-            };
-
-            addMessage(aiResponse);
-          } else {
-            throw new Error(followUpData.error?.message || t('api.error'));
-          }
-        } else if (parts[0]?.text) {
-          // 일반적인 텍스트 응답
-          const aiResponse: ChatMessage = {
-            id: Date.now().toString() + '_ai',
-            content: parts[0].text,
-            timestamp: new Date(),
-            type: 'ai',
-          };
-
-          addMessage(aiResponse);
-        }
-      } else {
-        throw new Error(data.error?.message || t('api.error'));
+      const aiResponse = await sendToAI(userMessage, messagesForAI, memoTools, executeTool);
+      
+      if (aiResponse) {
+        console.log('handleChat: Got AI response, adding to chat');
+        addMessage(aiResponse);
       }
     } catch (error) {
-      console.error('Gemini API error:', error);
+      console.error('Error in handleChat:', error);
       Alert.alert(t('api.aiError'), t('api.error'));
-    } finally {
-      // AI 처리 완료
-      setIsAIProcessing(false);
-      setAiProcessingStatus('');
     }
   };
 
@@ -929,177 +204,193 @@ const ChatScreen: React.FC = () => {
       >
         <Icon name="chevron-back" size={24} color={theme.colors.text} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>
-        {currentRoom?.title || '채팅'}
-      </Text>
-      <View style={styles.headerPlaceholder} />
+      <View style={styles.headerTitleContainer}>
+        <Text style={styles.headerTitle}>
+          {currentRoom?.title || t('chat.title')}
+        </Text>
+      </View>
     </View>
   );
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: theme.spacing?.md || 16,
-      paddingVertical: theme.spacing?.sm || 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
-    },
-    backButton: {
-      padding: theme.spacing?.xs || 4,
-    },
-    headerTitle: {
-      fontSize: getResponsiveFontSize(18),
-      fontWeight: '600',
-      color: theme.colors.text,
-      flex: 1,
-      textAlign: 'center',
-    },
-    headerPlaceholder: {
-      width: 32, // backButton과 동일한 너비로 중앙 정렬
-    },
-    chatContainer: {
-      flex: 1,
-      paddingHorizontal: theme.spacing.sm,
-    },
-
-    dateSeparatorContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginVertical: theme.spacing.md,
-      paddingHorizontal: theme.spacing.md,
-    },
-    dateSeparatorLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: theme.colors.border,
-    },
-    dateSeparatorText: {
-      marginHorizontal: theme.spacing.sm,
-      fontSize: getResponsiveFontSize(12),
-      color: theme.colors.textSecondary,
-      fontWeight: '500',
-    },
-    inputContainer: {
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-      backgroundColor: theme.colors.surface,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-    },
-    textInput: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 20,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      fontSize: getResponsiveFontSize(16),
-      color: theme.colors.text,
-      backgroundColor: theme.colors.background,
-      maxHeight: 100,
-      marginBottom: theme.spacing.sm,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: theme.spacing.sm,
-    },
-    button: {
-      flex: 1,
-      borderRadius: 20,
-      paddingVertical: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    recordButton: {
-      backgroundColor: '#4CAF50', // 초록색
-    },
-    chatButton: {
-      backgroundColor: theme.colors.primary, // 파란색
-    },
-    buttonText: {
-      color: '#FFFFFF',
-      fontSize: getResponsiveFontSize(16),
-      fontWeight: '600',
-    },
-
-    processingContainer: {
-      marginVertical: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.sm,
-      alignItems: 'flex-start',
-    },
-    processingBubble: {
-      maxWidth: '80%',
-      borderRadius: 18,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderBottomLeftRadius: 4,
-    },
-    processingContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-    },
-    processingText: {
-      fontSize: getResponsiveFontSize(14),
-      color: theme.colors.textSecondary,
-      fontStyle: 'italic',
-    },
-  });
+  const renderInput = () => (
+    <View style={styles.inputContainer}>
+      <TextInput
+        style={styles.textInput}
+        value={message}
+        onChangeText={setMessage}
+        placeholder={t('chat.placeholder')}
+        placeholderTextColor={theme.colors.textSecondary}
+        multiline
+        editable={!isAIProcessing}
+      />
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.recordButton,
+            (!message.trim() || isAIProcessing) && styles.disabledButton
+          ]}
+          onPress={handleRecord}
+          disabled={!message.trim() || isAIProcessing}
+        >
+          <Text style={styles.buttonText}>{t('chat.record')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.chatButton,
+            (!message.trim() || isAIProcessing) && styles.disabledButton
+          ]}
+          onPress={handleChat}
+          disabled={!message.trim() || isAIProcessing}
+        >
+          <Text style={styles.buttonText}>{t('chat.chat')}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
-      <KeyboardAvoidingView
-        style={styles.container}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <FlatList
           ref={flatListRef}
-          style={styles.chatContainer}
           data={chatListData}
           renderItem={renderChatListItem}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
+          style={styles.messagesList}
+          contentContainerStyle={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
-          inverted={false}
           ListFooterComponent={isAIProcessing ? renderProcessingIndicator : null}
         />
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder={t('chat.placeholder')}
-            placeholderTextColor={theme.colors.textSecondary}
-            value={message}
-            onChangeText={setMessage}
-            multiline
-          />
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.recordButton]}
-              onPress={handleRecord}
-            >
-              <Text style={styles.buttonText}>{t('chat.record')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.chatButton]}
-              onPress={handleChat}
-            >
-              <Text style={styles.buttonText}>{t('chat.chat')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {renderInput()}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: getResponsiveFontSize(18),
+    fontWeight: '600',
+    color: '#333',
+  },
+  messagesList: {
+    flex: 1,
+  },
+  messagesContainer: {
+    paddingVertical: 8,
+  },
+  dateSeparatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    paddingHorizontal: 16,
+  },
+  dateSeparatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  dateSeparatorText: {
+    marginHorizontal: 16,
+    fontSize: getResponsiveFontSize(12),
+    color: '#666',
+    fontWeight: '500',
+  },
+  processingContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  processingBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: '80%',
+  },
+  processingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  processingText: {
+    marginLeft: 8,
+    fontSize: getResponsiveFontSize(14),
+    color: '#666',
+  },
+  inputContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: getResponsiveFontSize(16),
+    color: '#333',
+    backgroundColor: '#FFFFFF',
+    maxHeight: 100,
+    marginBottom: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  button: {
+    flex: 1,
+    borderRadius: 20,
+    paddingVertical: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recordButton: {
+    backgroundColor: '#4CAF50',
+  },
+  chatButton: {
+    backgroundColor: '#2196F3',
+  },
+  disabledButton: {
+    backgroundColor: '#CCCCCC',
+    opacity: 0.5,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: getResponsiveFontSize(16),
+    fontWeight: '600',
+  },
+});
 
 export default ChatScreen;

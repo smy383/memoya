@@ -8,7 +8,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
 import { RootTabParamList, RootStackParamList } from '../types';
 import ChatRoomsListScreen from '../screens/ChatRoomsListScreen';
-import ChatScreenRefactored from '../screens/ChatScreenRefactored';
+import ChatScreen from '../screens/ChatScreen';
 import MemosScreen from '../screens/MemosScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TrashScreen from '../screens/TrashScreen';
@@ -110,7 +110,7 @@ const TabNavigator: React.FC = () => {
       />
       <Stack.Screen 
         name="ChatRoom" 
-        component={ChatScreenRefactored}
+        component={ChatScreen}
         options={{ 
           headerShown: false,
           presentation: 'card',

@@ -68,10 +68,10 @@ const ChatRoomsListScreen: React.FC = () => {
     useCallback(() => {
       console.log('ChatRoomsListScreen: Screen focused, refreshing metadata');
       // 채팅방이 있는 경우에만 새로고침
-      if (chatRooms.length > 0) {
+      if (chatRooms && chatRooms.length > 0) {
         refreshAllRoomMetadata();
       }
-    }, [refreshAllRoomMetadata, chatRooms.length])
+    }, [refreshAllRoomMetadata, chatRooms?.length])
   );
 
   const handleRoomPress = async (roomId: string) => {
@@ -223,6 +223,10 @@ const ChatRoomsListScreen: React.FC = () => {
 
   // 채팅방 목록과 광고를 혼합한 데이터 생성
   const mixedData = useMemo(() => {
+    if (!chatRooms || chatRooms.length === 0) {
+      return [];
+    }
+
     if (isPremium) {
       return chatRooms.map(room => ({ type: 'chatRoom', data: room }));
     }
