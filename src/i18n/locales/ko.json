@@ -33,7 +33,11 @@
   "memos": {
     "title": "내 메모",
     "empty": "메모가 없습니다",
-    "searchPlaceholder": "메모 검색..."
+    "searchPlaceholder": "메모 검색...",
+    "categories": {
+      "all": "전체",
+      "legacy": "기본"
+    }
   },
   "settings": {
     "title": "설정",

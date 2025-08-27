@@ -13,7 +13,11 @@
   "memos": {
     "title": "マイメモ",
     "empty": "メモがありません",
-    "searchPlaceholder": "メモを検索..."
+    "searchPlaceholder": "メモを検索...",
+    "categories": {
+      "all": "全て",
+      "legacy": "デフォルト"
+    }
   },
   "settings": {
     "title": "設定",

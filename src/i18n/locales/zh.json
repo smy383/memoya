@@ -13,7 +13,11 @@
   "memos": {
     "title": "我的备忘录",
     "empty": "暂无备忘录",
-    "searchPlaceholder": "搜索备忘录..."
+    "searchPlaceholder": "搜索备忘录...",
+    "categories": {
+      "all": "全部",
+      "legacy": "默认"
+    }
   },
   "settings": {
     "title": "设置",

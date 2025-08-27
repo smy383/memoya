@@ -34,7 +34,11 @@
   "memos": {
     "title": "My Memos",
     "empty": "No memos yet",
-    "searchPlaceholder": "Search memos..."
+    "searchPlaceholder": "Search memos...",
+    "categories": {
+      "all": "All",
+      "legacy": "Default"
+    }
   },
   "settings": {
     "title": "Settings",

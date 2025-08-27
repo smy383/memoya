@@ -13,7 +13,11 @@
   "memos": {
     "title": "Meine Notizen",
     "empty": "Noch keine Notizen",
-    "searchPlaceholder": "Notizen suchen..."
+    "searchPlaceholder": "Notizen suchen...",
+    "categories": {
+      "all": "Alle",
+      "legacy": "Standard"
+    }
   },
   "settings": {
     "title": "Einstellungen",

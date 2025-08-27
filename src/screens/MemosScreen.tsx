@@ -46,6 +46,37 @@ const MemosScreen: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
+  // 카테고리별 메모 개수 계산
+  const getCategoryStats = () => {
+    const stats: { [key: string]: number } = { all: memos.length };
+    
+    memos.forEach(memo => {
+      if (memo.roomId) {
+        stats[memo.roomId] = (stats[memo.roomId] || 0) + 1;
+      } else {
+        stats['legacy'] = (stats['legacy'] || 0) + 1;
+      }
+    });
+    
+    return stats;
+  };
+
+  // 채팅방 이름 가져오기
+  const getRoomName = (roomId: string) => {
+    const room = chatRooms.find(r => r.id === roomId);
+    return room?.title || roomId;
+  };
+
+  // 카테고리 이름을 6자로 제한하여 반환
+  const getCategoryDisplayName = (memo: ExtendedMemo) => {
+    if (!memo.roomId) {
+      return t('memos.categories.legacy');
+    }
+    const roomName = getRoomName(memo.roomId);
+    return roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName;
+  };
 
   const loadMemos = async () => {
     try {
@@ -128,15 +159,27 @@ const MemosScreen: React.FC = () => {
   );
 
   useEffect(() => {
-    if (searchText.trim()) {
-      const filtered = memos.filter(memo =>
-        memo.content.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setFilteredMemos(filtered);
-    } else {
-      setFilteredMemos(memos);
+    let filtered = memos;
+    
+    // 카테고리 필터 적용
+    if (selectedCategory !== 'all') {
+      if (selectedCategory === 'legacy') {
+        filtered = filtered.filter(memo => !memo.roomId);
+      } else {
+        filtered = filtered.filter(memo => memo.roomId === selectedCategory);
+      }
     }
-  }, [searchText, memos]);
+    
+    // 검색 필터 적용
+    if (searchText.trim()) {
+      filtered = filtered.filter(memo =>
+        memo.content.toLowerCase().includes(searchText.toLowerCase()) ||
+        (memo.title && memo.title.toLowerCase().includes(searchText.toLowerCase()))
+      );
+    }
+    
+    setFilteredMemos(filtered);
+  }, [searchText, memos, selectedCategory]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleString(i18n.language === 'ko' ? 'ko-KR' : 
@@ -346,9 +389,16 @@ const MemosScreen: React.FC = () => {
         }}
         activeOpacity={0.7}
       >
-        <Text style={styles.memoTitle} numberOfLines={1}>
-          {item.title || item.content.substring(0, 10)}
-        </Text>
+        <View style={styles.memoTitleRow}>
+          <Text style={styles.memoTitle} numberOfLines={1}>
+            {item.title || item.content.substring(0, 10)}
+          </Text>
+          <View style={styles.categoryTag}>
+            <Text style={styles.categoryText}>
+              {getCategoryDisplayName(item)}
+            </Text>
+          </View>
+        </View>
         <Text style={styles.memoDate}>
           {formatDate(item.timestamp)}
         </Text>
@@ -416,11 +466,31 @@ const MemosScreen: React.FC = () => {
       flex: 1,
       marginRight: theme.spacing.sm,
     },
+    memoTitleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
     memoTitle: {
       fontSize: getResponsiveFontSize(16),
       color: theme.colors.text,
       fontWeight: '500',
-      marginBottom: theme.spacing.xs,
+      flex: 1,
+      marginRight: theme.spacing.xs,
+    },
+    categoryTag: {
+      backgroundColor: theme.colors.primary + '20',
+      paddingHorizontal: theme.spacing.xs,
+      paddingVertical: 2,
+      borderRadius: 12,
+      minWidth: 40,
+    },
+    categoryText: {
+      fontSize: getResponsiveFontSize(11),
+      color: theme.colors.primary,
+      fontWeight: '600',
+      textAlign: 'center',
     },
     memoDate: {
       fontSize: getResponsiveFontSize(12),
@@ -501,6 +571,34 @@ const MemosScreen: React.FC = () => {
       fontSize: getResponsiveFontSize(16),
       fontWeight: '600',
     },
+    categoryFilters: {
+      marginTop: theme.spacing.sm,
+    },
+    categoryFiltersContent: {
+      paddingHorizontal: theme.spacing.xs,
+    },
+    categoryButton: {
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: 20,
+      marginHorizontal: theme.spacing.xs,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    categoryButtonActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    categoryButtonText: {
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    categoryButtonTextActive: {
+      color: theme.colors.background,
+      fontWeight: '600',
+    },
   });
 
   return (
@@ -513,6 +611,45 @@ const MemosScreen: React.FC = () => {
           value={searchText}
           onChangeText={setSearchText}
         />
+        
+        {/* 카테고리 필터 버튼들 */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilters}
+          contentContainerStyle={styles.categoryFiltersContent}
+        >
+          {(() => {
+            const stats = getCategoryStats();
+            const categories = [
+              { id: 'all', name: t('memos.categories.all'), count: stats.all },
+              ...chatRooms.map(room => ({
+                id: room.id,
+                name: room.title,
+                count: stats[room.id] || 0
+              })).filter(cat => cat.count > 0),
+              ...(stats.legacy ? [{ id: 'legacy', name: t('memos.categories.legacy'), count: stats.legacy }] : [])
+            ];
+            
+            return categories.map(category => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.categoryButton,
+                  selectedCategory === category.id && styles.categoryButtonActive
+                ]}
+                onPress={() => setSelectedCategory(category.id)}
+              >
+                <Text style={[
+                  styles.categoryButtonText,
+                  selectedCategory === category.id && styles.categoryButtonTextActive
+                ]}>
+                  {category.name} ({category.count})
+                </Text>
+              </TouchableOpacity>
+            ));
+          })()}
+        </ScrollView>
       </View>
 
       {/* 프리미엄이 아닌 경우에만 배너 광고 표시 */}

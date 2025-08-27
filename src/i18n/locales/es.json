@@ -13,7 +13,11 @@
   "memos": {
     "title": "Mis Notas",
     "empty": "No hay notas aún",
-    "searchPlaceholder": "Buscar notas..."
+    "searchPlaceholder": "Buscar notas...",
+    "categories": {
+      "all": "Todos",
+      "legacy": "Predeterminado"
+    }
   },
   "settings": {
     "title": "Configuración",
