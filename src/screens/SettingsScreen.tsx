@@ -7,6 +7,7 @@ import {
   Switch,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -20,6 +21,7 @@ import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import LanguageSelector from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
+import { createBackup, shareBackupFile } from '../services/backupService';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -29,6 +31,7 @@ const SettingsScreen: React.FC = () => {
   const { isPremium, subscriptionType, subscriptionEndDate, subscribeToPremium, cancelSubscription } = useSubscription();
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const [isLanguageSelectorVisible, setIsLanguageSelectorVisible] = useState(false);
+  const [isBackupCreating, setIsBackupCreating] = useState(false);
 
   // i18n이 아직 로드되지 않은 경우 기본값 사용
   const safeT = (key: string, defaultValue?: string) => {
@@ -104,6 +107,28 @@ const SettingsScreen: React.FC = () => {
     } catch (error) {
       Alert.alert(t('common.error'), t('settings.dataManagement.testRoomError'));
     }
+  };
+
+  const handleCreateBackup = async () => {
+    try {
+      setIsBackupCreating(true);
+      const backupFilePath = await createBackup();
+      await shareBackupFile(backupFilePath);
+      Alert.alert(t('common.success'), t('settings.dataManagement.backupSuccess'));
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      Alert.alert(t('common.error'), t('settings.dataManagement.backupError'));
+    } finally {
+      setIsBackupCreating(false);
+    }
+  };
+
+  const handleRestoreBackup = async () => {
+    Alert.alert(
+      t('common.info'),
+      '백업 복구 기능은 곧 추가될 예정입니다.\n현재는 백업 생성 기능만 사용 가능합니다.',
+      [{ text: t('common.confirm') }]
+    );
   };
 
   const resetAllData = () => {
@@ -447,6 +472,46 @@ const SettingsScreen: React.FC = () => {
               <Text style={[styles.settingLabel, { color: '#ff4757' }]}>{t('settings.dataManagement.deleteAllData')}</Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color="#ff4757" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>{t('settings.dataManagement.backupRestore')}</Text>
+        <View style={styles.section}>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="document-outline" size={20} color={theme.colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingLabel}>{t('settings.dataManagement.backupRestore')}</Text>
+                <Text style={[styles.settingValue, { fontSize: getResponsiveFontSize(12), marginTop: 2 }]}>
+                  {t('settings.dataManagement.backupDescription')}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handleCreateBackup}
+            disabled={isBackupCreating}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="cloud-upload-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.settingLabel}>{t('settings.dataManagement.createBackup')}</Text>
+            </View>
+            {isBackupCreating ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.settingItem, styles.lastSettingItem]}
+            onPress={handleRestoreBackup}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="cloud-download-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.settingLabel}>{t('settings.dataManagement.restoreBackup')}</Text>
+            </View>
+            <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
 

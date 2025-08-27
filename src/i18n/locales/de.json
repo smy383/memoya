@@ -46,7 +46,20 @@
       "resetError": "Fehler beim Löschen der Daten.",
       "checkStoredData": "Gespeicherte Daten anzeigen",
       "saveTestRoom": "Test-Chatroom speichern",
-      "deleteAllData": "Alle Daten löschen"
+      "deleteAllData": "Alle Daten löschen",
+      "backupRestore": "Sicherung & Wiederherstellung",
+      "createBackup": "Datensicherung erstellen",
+      "restoreBackup": "Aus Sicherung wiederherstellen",
+      "backupSuccess": "Sicherung erfolgreich erstellt.",
+      "backupError": "Fehler beim Erstellen der Sicherung.",
+      "backupCreating": "Sicherung wird erstellt...",
+      "restoreTitle": "Sicherung wiederherstellen",
+      "restoreMessage": "Möchten Sie Daten aus der Sicherungsdatei wiederherstellen?\n\n📋 Sicherungsinfo:\n• Version: {{version}}\n• Erstellt: {{timestamp}}\n• Chatrooms: {{chatRooms}}\n• Notizen: {{memos}}\n• Gesamtdaten: {{dataCount}} Elemente\n\n🚨 Warnung:\n• Alle aktuellen Daten werden gelöscht\n• Werden vollständig durch Sicherungsdaten ersetzt\n• Diese Aktion kann nicht rückgängig gemacht werden",
+      "restoreConfirm": "Aus Sicherung wiederherstellen",
+      "restoreSuccess": "Sicherung erfolgreich wiederhergestellt.\nBitte starten Sie die App neu.",
+      "restoreError": "Fehler beim Wiederherstellen der Sicherung.",
+      "invalidBackupFile": "Ungültige Sicherungsdatei.",
+      "backupDescription": "Sichern Sie alle Chatrooms, Notizen und Einstellungen zur Wiederherstellung auf anderen Geräten."
     }
   },
   "common": {

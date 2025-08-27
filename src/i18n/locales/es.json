@@ -46,7 +46,20 @@
       "resetError": "Ocurrió un error al eliminar los datos.",
       "checkStoredData": "Ver Datos Almacenados",
       "saveTestRoom": "Guardar Sala de Chat de Prueba",
-      "deleteAllData": "Eliminar Todos los Datos"
+      "deleteAllData": "Eliminar Todos los Datos",
+      "backupRestore": "Respaldo y Restauración",
+      "createBackup": "Crear Respaldo de Datos",
+      "restoreBackup": "Restaurar desde Respaldo",
+      "backupSuccess": "Respaldo creado exitosamente.",
+      "backupError": "Error al crear el respaldo.",
+      "backupCreating": "Creando respaldo...",
+      "restoreTitle": "Restaurar Respaldo",
+      "restoreMessage": "¿Desea restaurar datos desde el archivo de respaldo?\n\n📋 Información del Respaldo:\n• Versión: {{version}}\n• Creado: {{timestamp}}\n• Salas de Chat: {{chatRooms}}\n• Notas: {{memos}}\n• Datos Totales: {{dataCount}} elementos\n\n🚨 Advertencia:\n• Todos los datos actuales serán eliminados\n• Serán completamente reemplazados con datos de respaldo\n• Esta acción no se puede deshacer",
+      "restoreConfirm": "Restaurar desde Respaldo",
+      "restoreSuccess": "Respaldo restaurado exitosamente.\nPor favor reinicie la aplicación.",
+      "restoreError": "Error al restaurar el respaldo.",
+      "invalidBackupFile": "Archivo de respaldo inválido.",
+      "backupDescription": "Respalda todas las salas de chat, notas y configuraciones para restaurar en otros dispositivos."
     }
   },
   "common": {

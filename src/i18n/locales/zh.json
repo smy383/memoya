@@ -46,7 +46,20 @@
       "resetError": "删除数据时发生错误。",
       "checkStoredData": "查看已保存数据",
       "saveTestRoom": "保存测试聊天室",
-      "deleteAllData": "删除所有数据"
+      "deleteAllData": "删除所有数据",
+      "backupRestore": "备份与恢复",
+      "createBackup": "创建数据备份",
+      "restoreBackup": "从备份恢复",
+      "backupSuccess": "备份创建成功。",
+      "backupError": "创建备份时发生错误。",
+      "backupCreating": "正在创建备份...",
+      "restoreTitle": "恢复备份",
+      "restoreMessage": "您要从备份文件恢复数据吗？\n\n📋 备份信息:\n• 版本: {{version}}\n• 创建时间: {{timestamp}}\n• 聊天室: {{chatRooms}}个\n• 备忘录: {{memos}}个\n• 总数据: {{dataCount}}项\n\n🚨 警告:\n• 所有当前数据将被删除\n• 将完全替换为备份数据\n• 此操作无法撤销",
+      "restoreConfirm": "从备份恢复",
+      "restoreSuccess": "备份恢复成功。\n请重启应用。",
+      "restoreError": "恢复备份时发生错误。",
+      "invalidBackupFile": "无效的备份文件。",
+      "backupDescription": "备份所有聊天室、备忘录和设置，可在其他设备上恢复。"
     }
   },
   "common": {

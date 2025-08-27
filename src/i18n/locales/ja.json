@@ -46,7 +46,20 @@
       "resetError": "データ削除中にエラーが発生しました。",
       "checkStoredData": "保存データ確認",
       "saveTestRoom": "テストチャットルーム保存",
-      "deleteAllData": "全データ削除"
+      "deleteAllData": "全データ削除",
+      "backupRestore": "バックアップと復元",
+      "createBackup": "データバックアップ作成",
+      "restoreBackup": "バックアップから復元",
+      "backupSuccess": "バックアップが正常に作成されました。",
+      "backupError": "バックアップ作成中にエラーが発生しました。",
+      "backupCreating": "バックアップ作成中...",
+      "restoreTitle": "バックアップ復元",
+      "restoreMessage": "バックアップファイルからデータを復元しますか？\n\n📋 バックアップ情報:\n• バージョン: {{version}}\n• 作成日: {{timestamp}}\n• チャットルーム: {{chatRooms}}個\n• メモ: {{memos}}個\n• 総データ: {{dataCount}}項目\n\n🚨 注意:\n• 現在のすべてのデータが削除されます\n• バックアップデータで完全に置き換えられます\n• この操作は元に戻せません",
+      "restoreConfirm": "バックアップから復元",
+      "restoreSuccess": "バックアップが正常に復元されました。\nアプリを再起動してください。",
+      "restoreError": "バックアップ復元中にエラーが発生しました。",
+      "invalidBackupFile": "無効なバックアップファイルです。",
+      "backupDescription": "すべてのチャットルーム、メモ、設定をバックアップして他のデバイスで復元できます。"
     }
   },
   "common": {

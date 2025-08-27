@@ -67,7 +67,20 @@
       "resetError": "An error occurred while deleting data.",
       "checkStoredData": "Check Stored Data",
       "saveTestRoom": "Save Test Chat Room",
-      "deleteAllData": "Delete All Data"
+      "deleteAllData": "Delete All Data",
+      "backupRestore": "Backup & Restore",
+      "createBackup": "Create Data Backup",
+      "restoreBackup": "Restore from Backup",
+      "backupSuccess": "Backup created successfully.",
+      "backupError": "Error occurred while creating backup.",
+      "backupCreating": "Creating backup...",
+      "restoreTitle": "Restore Backup",
+      "restoreMessage": "Do you want to restore data from the backup file?\n\n📋 Backup Info:\n• Version: {{version}}\n• Created: {{timestamp}}\n• Chat Rooms: {{chatRooms}}\n• Memos: {{memos}}\n• Total Data: {{dataCount}} items\n\n🚨 Warning:\n• All current data will be deleted\n• Will be completely replaced with backup data\n• This action cannot be undone",
+      "restoreConfirm": "Restore from Backup",
+      "restoreSuccess": "Backup restored successfully.\nPlease restart the app.",
+      "restoreError": "Error occurred while restoring backup.",
+      "invalidBackupFile": "Invalid backup file.",
+      "backupDescription": "Backup all chat rooms, memos, and settings to restore on other devices."
     }
   },
   "common": {
