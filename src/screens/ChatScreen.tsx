@@ -22,9 +22,9 @@ import { Memo, RootStackParamList } from '../types';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { useChat } from '../hooks/useChat';
 import { useAI } from '../hooks/useAI';
-import ChatMessageComponent, { ChatMessage } from '../components/chat/ChatMessage';
+import ChatMessageComponent, { ChatMessage, MemoActionData } from '../components/chat/ChatMessage';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
-import { getMemoTools, executeMemoTool } from '../services/memoTools';
+import { getMemoTools, executeMemoTool, executeCreateMemo, executeUpdateMemo, executeDeleteMemo } from '../services/memoTools';
 
 interface ChatListItem {
   id: string;
@@ -123,6 +123,77 @@ const ChatScreen: React.FC = () => {
     }
   };
 
+  // 승인 처리 함수들
+  const handleActionApprove = async (messageId: string, actionData: MemoActionData) => {
+    try {
+      let result;
+      const args = actionData.originalToolResult?.args || {};
+      
+      switch (actionData.actionType) {
+        case 'create':
+          result = await executeCreateMemo(args, activeRoomId);
+          break;
+        case 'update':
+          result = await executeUpdateMemo(args, activeRoomId);
+          break;
+        case 'delete':
+          result = await executeDeleteMemo(args, activeRoomId);
+          break;
+        default:
+          throw new Error('Unknown action type');
+      }
+
+      // 메시지에서 pendingAction 제거하고 결과 메시지 추가
+      setChatMessages(prevMessages => 
+        prevMessages.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, pendingAction: undefined }
+            : msg
+        )
+      );
+
+      // 결과 메시지 추가
+      const resultMessage: ChatMessage = {
+        id: Date.now().toString() + '_result',
+        content: result.message,
+        timestamp: new Date(),
+        type: 'ai',
+      };
+      
+      addMessage(resultMessage);
+
+      // 메타데이터 업데이트
+      if (currentRoom) {
+        await handleMetadataUpdate(currentRoom.id);
+      }
+
+    } catch (error) {
+      console.error('Error executing action:', error);
+      Alert.alert(t('api.aiError'), '작업 실행 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleActionCancel = (messageId: string) => {
+    // 메시지에서 pendingAction 제거
+    setChatMessages(prevMessages => 
+      prevMessages.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, pendingAction: undefined }
+          : msg
+      )
+    );
+
+    // 취소 메시지 추가
+    const cancelMessage: ChatMessage = {
+      id: Date.now().toString() + '_cancel',
+      content: '작업이 취소되었습니다.',
+      timestamp: new Date(),
+      type: 'ai',
+    };
+    
+    addMessage(cancelMessage);
+  };
+
   const handleChat = async () => {
     if (!message.trim()) return;
 
@@ -141,11 +212,126 @@ const ChatScreen: React.FC = () => {
     
     setMessage('');
     
-    // AI 응답 처리 - 현재 메시지 배열에 새 메시지를 추가한 배열을 전달
+    // AI 응답 처리 - 승인 요청 시스템 사용
     try {
       const memoTools = getMemoTools(t);
-      const executeTool = (functionName: string, args: any) => 
-        executeMemoTool(functionName, args, activeRoomId, t);
+      
+      // 승인 요청을 위한 executeTool 함수
+      const executeTool = async (functionName: string, args: any) => {
+        // 메모 관련 도구인 경우 승인 요청 생성
+        if (['create_memo', 'update_memo', 'delete_memo'].includes(functionName)) {
+          // 액션 타입별 preview 생성
+          let preview: any = {};
+          
+          switch (functionName) {
+            case 'create_memo':
+              preview = {
+                content: args.content || '새 메모 내용',
+                tags: args.tags || [],
+                timestamp: new Date().toISOString(),
+                formattedDate: new Date().toLocaleString('ko-KR')
+              };
+              break;
+              
+            case 'update_memo':
+              // 기존 메모 찾기 (올바른 파라미터 이름 사용)
+              try {
+                const memosKey = activeRoomId ? `memos_${activeRoomId}` : 'memos';
+                const existingMemos = await AsyncStorage.getItem(memosKey);
+                const memos = existingMemos ? JSON.parse(existingMemos) : [];
+                const existingMemo = memos.find((memo: any) => memo.id === args.memo_id);
+                
+                preview = {
+                  memoId: args.memo_id,
+                  originalContent: existingMemo?.content || '메모를 찾을 수 없습니다',
+                  newContent: args.new_content || '수정된 내용',
+                  timestamp: existingMemo?.timestamp || new Date().toISOString(),
+                  formattedDate: existingMemo ? new Date(existingMemo.timestamp).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
+                };
+              } catch (error) {
+                preview = {
+                  memoId: args.memo_id,
+                  originalContent: '메모를 불러올 수 없습니다',
+                  newContent: args.new_content || '수정된 내용',
+                  timestamp: new Date().toISOString(),
+                  formattedDate: new Date().toLocaleString('ko-KR')
+                };
+              }
+              break;
+              
+            case 'delete_memo':
+              // 삭제할 메모 찾기 (올바른 파라미터 이름 사용)
+              try {
+                const memosKey = activeRoomId ? `memos_${activeRoomId}` : 'memos';
+                const existingMemos = await AsyncStorage.getItem(memosKey);
+                const memos = existingMemos ? JSON.parse(existingMemos) : [];
+                const existingMemo = memos.find((memo: any) => memo.id === args.memo_id);
+                
+                preview = {
+                  memoId: args.memo_id,
+                  content: existingMemo?.content || '메모를 찾을 수 없습니다',
+                  timestamp: existingMemo?.timestamp || new Date().toISOString(),
+                  formattedDate: existingMemo ? new Date(existingMemo.timestamp).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
+                };
+              } catch (error) {
+                preview = {
+                  memoId: args.memo_id,
+                  content: '메모를 불러올 수 없습니다',
+                  timestamp: new Date().toISOString(),
+                  formattedDate: new Date().toLocaleString('ko-KR')
+                };
+              }
+              break;
+          }
+          
+          // 액션별 승인 메시지 생성
+          let approvalContent = '';
+          switch (functionName) {
+            case 'create_memo':
+              approvalContent = '메모 생성을 위해 승인을 해주세요.';
+              break;
+            case 'update_memo':
+              approvalContent = '메모 수정을 위해 승인을 해주세요.';
+              break;
+            case 'delete_memo':
+              approvalContent = '메모 삭제를 위해 승인을 해주세요.';
+              break;
+            default:
+              approvalContent = `${functionName} 작업을 실행하시겠습니까?`;
+          }
+          
+          // 승인 요청 메시지 생성
+          const approvalMessage: ChatMessage = {
+            id: Date.now().toString() + '_approval',
+            content: approvalContent,
+            timestamp: new Date(),
+            type: 'ai',
+            pendingAction: {
+              actionType: functionName.replace('_memo', '') as 'create' | 'update' | 'delete',
+              preview: preview,
+              originalToolResult: {
+                functionName,
+                args,
+                success: true,
+                message: `${functionName} 실행 준비 완료`
+              }
+            }
+          };
+          
+          // 승인 요청 메시지 추가
+          addMessage(approvalMessage);
+          
+          // 도구 실행 결과 반환 (실제로는 실행하지 않음)
+          return {
+            success: true,
+            message: '승인 요청이 생성되었습니다.',
+            requiresApproval: true
+          };
+        } else {
+          // 다른 도구들은 기존대로 실행
+          return await executeMemoTool(functionName, args, activeRoomId, t);
+        }
+      };
       
       // 현재 메시지 배열에 새로 추가된 사용자 메시지를 포함한 배열 생성
       const messagesForAI = [...chatMessages, newMessage];
@@ -154,7 +340,7 @@ const ChatScreen: React.FC = () => {
       
       const aiResponse = await sendToAI(userMessage, messagesForAI, memoTools, executeTool);
       
-      if (aiResponse) {
+      if (aiResponse && !aiResponse.content.includes('승인 요청이 생성되었습니다')) {
         console.log('handleChat: Got AI response, adding to chat');
         addMessage(aiResponse);
       }
@@ -173,7 +359,13 @@ const ChatScreen: React.FC = () => {
   );
 
   const renderChatMessage = (message: ChatMessage) => {
-    return <ChatMessageComponent message={message} />;
+    return (
+      <ChatMessageComponent 
+        message={message} 
+        onActionApprove={handleActionApprove}
+        onActionCancel={handleActionCancel}
+      />
+    );
   };
 
   const renderProcessingIndicator = () => (

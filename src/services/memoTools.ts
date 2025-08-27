@@ -96,6 +96,57 @@ export const getMemoTools = (t: (key: string) => string) => {
           }
         }
       }
+    },
+    {
+      name: "create_memo",
+      description: t('ai.tools.createMemo.description'),
+      parameters: {
+        type: "object",
+        properties: {
+          content: {
+            type: "string",
+            description: t('ai.tools.createMemo.content')
+          },
+          tags: {
+            type: "array",
+            items: { type: "string" },
+            description: t('ai.tools.createMemo.tags')
+          }
+        },
+        required: ["content"]
+      }
+    },
+    {
+      name: "update_memo",
+      description: t('ai.tools.updateMemo.description'),
+      parameters: {
+        type: "object",
+        properties: {
+          memo_id: {
+            type: "string",
+            description: t('ai.tools.updateMemo.memoId')
+          },
+          new_content: {
+            type: "string",
+            description: t('ai.tools.updateMemo.newContent')
+          }
+        },
+        required: ["memo_id", "new_content"]
+      }
+    },
+    {
+      name: "delete_memo",
+      description: t('ai.tools.deleteMemo.description'),
+      parameters: {
+        type: "object",
+        properties: {
+          memo_id: {
+            type: "string",
+            description: t('ai.tools.deleteMemo.memoId')
+          }
+        },
+        required: ["memo_id"]
+      }
     }
   ];
 };
@@ -111,6 +162,12 @@ export const executeMemoTool = async (functionName: string, args: any, roomId?: 
         return await generateSummary(args, roomId);
       case 'extract_tasks':
         return await extractTasks(args, roomId);
+      case 'create_memo':
+        return await createMemoPreview(args, roomId);
+      case 'update_memo':
+        return await updateMemoPreview(args, roomId);
+      case 'delete_memo':
+        return await deleteMemoPreview(args, roomId);
       default:
         return {
           success: false,
@@ -478,4 +535,243 @@ const findTasksInText = (text: string): string[] => {
   });
   
   return tasks.slice(0, 10);
+};
+
+// 새로운 메모 생성 미리보기
+const createMemoPreview = async (args: any, roomId?: string) => {
+  try {
+    const { content, tags = [] } = args;
+    
+    return {
+      success: true,
+      requiresApproval: true,
+      actionType: 'create',
+      data: {
+        preview: {
+          content: content,
+          tags: tags,
+          timestamp: new Date().toISOString(),
+          formattedDate: new Date().toLocaleString('ko-KR')
+        }
+      },
+      message: '새 메모 생성을 위한 승인이 필요합니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 생성 미리보기 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 메모 수정 미리보기
+const updateMemoPreview = async (args: any, roomId?: string) => {
+  try {
+    const { memo_id, new_content } = args;
+    
+    // 기존 메모 찾기
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
+    const memos = activeMemos ? JSON.parse(activeMemos) : [];
+    
+    const targetMemo = memos.find((memo: any) => memo.id === memo_id);
+    
+    if (!targetMemo) {
+      return {
+        success: false,
+        message: '수정할 메모를 찾을 수 없습니다.'
+      };
+    }
+    
+    return {
+      success: true,
+      requiresApproval: true,
+      actionType: 'update',
+      data: {
+        preview: {
+          memoId: memo_id,
+          originalContent: targetMemo.content,
+          newContent: new_content,
+          timestamp: targetMemo.timestamp,
+          formattedDate: new Date(targetMemo.timestamp).toLocaleString('ko-KR')
+        }
+      },
+      message: '메모 수정을 위한 승인이 필요합니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 수정 미리보기 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 메모 삭제 미리보기
+const deleteMemoPreview = async (args: any, roomId?: string) => {
+  try {
+    const { memo_id } = args;
+    
+    // 기존 메모 찾기
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const activeMemos = await AsyncStorage.getItem(memosKey);
+    const memos = activeMemos ? JSON.parse(activeMemos) : [];
+    
+    const targetMemo = memos.find((memo: any) => memo.id === memo_id);
+    
+    if (!targetMemo) {
+      return {
+        success: false,
+        message: '삭제할 메모를 찾을 수 없습니다.'
+      };
+    }
+    
+    return {
+      success: true,
+      requiresApproval: true,
+      actionType: 'delete',
+      data: {
+        preview: {
+          memoId: memo_id,
+          content: targetMemo.content,
+          timestamp: targetMemo.timestamp,
+          formattedDate: new Date(targetMemo.timestamp).toLocaleString('ko-KR')
+        }
+      },
+      message: '메모 삭제를 위한 승인이 필요합니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 삭제 미리보기 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 실제 메모 생성 실행
+export const executeCreateMemo = async (args: any, roomId?: string) => {
+  try {
+    const { content, tags = [] } = args;
+    
+    const newMemo = {
+      id: Date.now().toString(),
+      content: content,
+      timestamp: new Date(),
+      tags: tags
+    };
+    
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const existingMemos = await AsyncStorage.getItem(memosKey);
+    const memos = existingMemos ? JSON.parse(existingMemos) : [];
+    
+    memos.unshift(newMemo);
+    await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
+    
+    return {
+      success: true,
+      data: {
+        memo: {
+          id: newMemo.id,
+          content: newMemo.content,
+          timestamp: newMemo.timestamp,
+          formattedDate: new Date(newMemo.timestamp).toLocaleString('ko-KR'),
+          tags: newMemo.tags
+        }
+      },
+      message: '새 메모가 성공적으로 생성되었습니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 생성 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 실제 메모 수정 실행
+export const executeUpdateMemo = async (args: any, roomId?: string) => {
+  try {
+    const { memo_id, new_content } = args;
+    
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const existingMemos = await AsyncStorage.getItem(memosKey);
+    const memos = existingMemos ? JSON.parse(existingMemos) : [];
+    
+    const memoIndex = memos.findIndex((memo: any) => memo.id === memo_id);
+    
+    if (memoIndex === -1) {
+      return {
+        success: false,
+        message: '수정할 메모를 찾을 수 없습니다.'
+      };
+    }
+    
+    const originalContent = memos[memoIndex].content;
+    memos[memoIndex].content = new_content;
+    memos[memoIndex].updatedAt = new Date();
+    
+    await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
+    
+    return {
+      success: true,
+      data: {
+        memo: {
+          id: memo_id,
+          originalContent: originalContent,
+          newContent: new_content,
+          timestamp: memos[memoIndex].timestamp,
+          updatedAt: memos[memoIndex].updatedAt,
+          formattedDate: new Date(memos[memoIndex].updatedAt).toLocaleString('ko-KR')
+        }
+      },
+      message: '메모가 성공적으로 수정되었습니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 수정 중 오류가 발생했습니다.'
+    };
+  }
+};
+
+// 실제 메모 삭제 실행
+export const executeDeleteMemo = async (args: any, roomId?: string) => {
+  try {
+    const { memo_id } = args;
+    
+    const memosKey = roomId ? `memos_${roomId}` : 'memos';
+    const existingMemos = await AsyncStorage.getItem(memosKey);
+    const memos = existingMemos ? JSON.parse(existingMemos) : [];
+    
+    const memoIndex = memos.findIndex((memo: any) => memo.id === memo_id);
+    
+    if (memoIndex === -1) {
+      return {
+        success: false,
+        message: '삭제할 메모를 찾을 수 없습니다.'
+      };
+    }
+    
+    const deletedMemo = memos[memoIndex];
+    memos.splice(memoIndex, 1);
+    
+    await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
+    
+    return {
+      success: true,
+      data: {
+        deletedMemo: {
+          id: memo_id,
+          content: deletedMemo.content,
+          timestamp: deletedMemo.timestamp,
+          formattedDate: new Date(deletedMemo.timestamp).toLocaleString('ko-KR')
+        }
+      },
+      message: '메모가 성공적으로 삭제되었습니다.'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: '메모 삭제 중 오류가 발생했습니다.'
+    };
+  }
 };

@@ -35,6 +35,10 @@ export const useAI = () => {
   예: "이번 달 메모 몇 개야?", "최근 메모 요약해줘", "할 일 정리해줘"
 - 과거 기록된 정보가 필요한 질문일 때
   예: "지난주에 뭐했지?", "그때 결정사항이 뭐였지?"
+- 메모 생성 요청 시
+  예: "새 메모 만들어줘", "이것을 메모해줘"
+- 메모 수정/삭제 요청 시 (반드시 먼저 검색 후 진행)
+  예: "자전거 메모 수정해줘" → 먼저 search_memos로 "자전거" 검색 → 결과에서 ID 확인 → update_memo 실행
 
 ### ❌ 절대 도구를 사용하지 말아야 하는 경우:
 - **인사말**: "안녕하세요", "안녕", "잘가", "또 봐"
@@ -49,10 +53,28 @@ export const useAI = () => {
 2. **메모 정보가 실제로 필요한지 판단하세요**
 3. **필요한 경우에만 도구를 사용하세요**
 4. **불필요한 경우 자연스럽게 대화하세요**
-5. **도구를 사용한 경우, 소스 메모를 언급하지 말고 결론만 간결하게 답변하세요**
+5. **도구를 사용한 경우, 찾은 메모 내용을 적극적으로 활용하여 유용한 답변을 제공하세요**
+6. **메모 내용이 있다면 그 내용을 바탕으로 구체적이고 도움이 되는 답변을 하세요**
+
+## 메모 수정/삭제 시 중요한 절차:
+1. **반드시 먼저 search_memos로 관련 메모를 검색하세요**
+2. **검색 결과에서 정확한 메모 ID를 확인하세요**
+3. **사용자에게 어떤 메모를 수정/삭제할지 확인받으세요**
+4. **확인 후 update_memo 또는 delete_memo를 실행하세요**
+
+예시:
+- 사용자: "자전거 수리 메모 수정해줘"
+- AI: search_memos(keyword: "자전거") 실행 → 결과 확인 → "자전거 관련 메모를 찾았습니다. 어떻게 수정하시겠습니까?" → 사용자 답변 후 update_memo 실행
 
 사용자와 친근하고 자연스러운 대화를 나누되, 메모 관련 도움이 필요할 때만 도구를 활용하세요. 
-답변에서는 "다음 메모를 참고했습니다" 같은 소스 언급 없이 결과만 제시하세요.`,
+도구로 메모를 찾았다면 그 내용을 바탕으로 구체적이고 유용한 정보를 제공하세요. 
+단순히 "메모를 찾았습니다"가 아니라 실제 메모 내용을 활용한 답변을 해주세요.
+
+## 중요: 도구 실행 결과 활용 규칙
+- search_memos 결과에 메모가 있다면 반드시 그 내용을 인용하거나 요약해서 답변하세요
+- "정보가 부족합니다"라고 답변하지 마세요. 찾은 메모 내용을 활용하세요
+- 메모 내용이 사용자 질문과 관련이 있다면 구체적으로 설명해주세요
+- 예시: "사업계획서 관련 메모를 찾았습니다. 메모에 따르면 [실제 메모 내용 요약]입니다."`,
       
       en: `You are a friendly and helpful memo assistant.
 - Use the provided tools only when you need information about the user's memos to answer a question
@@ -213,6 +235,9 @@ export const useAI = () => {
             functionCall.functionCall.name,
             functionCall.functionCall.args
           );
+          
+          // 디버깅: 도구 결과 확인
+          console.log('Tool Result:', JSON.stringify(toolResult, null, 2));
           
           setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'generating'));
           

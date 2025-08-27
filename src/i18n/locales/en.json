@@ -13,6 +13,24 @@
     "sourceMemos_plural": "{{count}} source memos",
     "sourceMemosTitle": "Referenced Memos ({{count}})"
   },
+  "memoAction": {
+    "createTitle": "Create New Memo",
+    "updateTitle": "Update Memo",
+    "deleteTitle": "Delete Memo",
+    "newContent": "New Content",
+    "originalContent": "Original Content",
+    "contentToDelete": "Content to Delete",
+    "tags": "Tags",
+    "createdAt": "Created At",
+    "create": "Create",
+    "update": "Update",
+    "delete": "Delete",
+    "approvalRequired": "Approval Required"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
   "memos": {
     "title": "My Memos",
     "empty": "No memos yet",

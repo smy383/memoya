@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { getResponsiveFontSize } from '../../utils/dimensions';
 import { useTranslation } from 'react-i18next';
 import SourceMemosModal from './SourceMemosModal';
+import MemoActionModal from './MemoActionModal';
 
 interface SourceMemo {
   id: string;
@@ -14,6 +15,12 @@ interface SourceMemo {
   relevance?: number; // 관련도 점수 (0-1)
 }
 
+interface MemoActionData {
+  actionType: 'create' | 'update' | 'delete';
+  preview: any;
+  originalToolResult?: any;
+}
+
 interface ChatMessage {
   id: string;
   content: string;
@@ -21,16 +28,24 @@ interface ChatMessage {
   type: 'user' | 'ai' | 'record';
   memoStatus?: 'active' | 'deleted' | 'permanentlyDeleted';
   sourceMemos?: SourceMemo[]; // AI 답변의 소스가 된 메모들
+  pendingAction?: MemoActionData; // 승인 대기 중인 액션
 }
 
 interface ChatMessageProps {
   message: ChatMessage;
+  onActionApprove?: (messageId: string, actionData: MemoActionData) => void;
+  onActionCancel?: (messageId: string) => void;
 }
 
-const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessageComponent: React.FC<ChatMessageProps> = ({ 
+  message, 
+  onActionApprove, 
+  onActionCancel 
+}) => {
   const { theme } = useTheme();
   const { t, i18n } = useTranslation();
   const [showSourceModal, setShowSourceModal] = useState(false);
+  const [showActionModal, setShowActionModal] = useState(false);
   
   const isUser = message.type === 'user';
   const isRecord = message.type === 'record';
@@ -39,6 +54,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
   const isDeleted = message.memoStatus === 'deleted';
   const isPermanentlyDeleted = message.memoStatus === 'permanentlyDeleted';
   const hasSourceMemos = isAI && message.sourceMemos && message.sourceMemos.length > 0;
+  const hasPendingAction = isAI && message.pendingAction;
 
   const styles = useMemo(() => StyleSheet.create({
     messageContainer: {
@@ -127,6 +143,23 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
       marginLeft: 4,
       fontWeight: '500',
     },
+    actionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: 'rgba(255, 152, 0, 0.1)',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 152, 0, 0.3)',
+    },
+    actionButtonText: {
+      fontSize: getResponsiveFontSize(12),
+      color: '#FF9800',
+      marginLeft: 4,
+      fontWeight: '500',
+    },
   }), [theme.colors, theme.spacing]);
 
 
@@ -160,6 +193,19 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
           </TouchableOpacity>
         )}
         
+        {hasPendingAction && (
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => setShowActionModal(true)}
+            activeOpacity={0.7}
+          >
+            <Icon name="checkmark-circle-outline" size={14} color="#FF9800" />
+            <Text style={styles.actionButtonText}>
+              {t('memoAction.approvalRequired')}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
         <Text style={[
           styles.messageTime,
           isRecord ? styles.recordTime : (isUser ? styles.userTime : styles.aiTime)
@@ -182,9 +228,24 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({ message }) => {
           onClose={() => setShowSourceModal(false)}
         />
       )}
+      
+      {hasPendingAction && (
+        <MemoActionModal
+          visible={showActionModal}
+          actionData={message.pendingAction!}
+          onApprove={() => {
+            setShowActionModal(false);
+            onActionApprove?.(message.id, message.pendingAction!);
+          }}
+          onCancel={() => {
+            setShowActionModal(false);
+            onActionCancel?.(message.id);
+          }}
+        />
+      )}
     </View>
   );
 };
 
 export default ChatMessageComponent;
-export type { ChatMessage, SourceMemo };
+export type { ChatMessage, SourceMemo, MemoActionData };
