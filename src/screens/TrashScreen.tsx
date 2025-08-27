@@ -29,8 +29,21 @@ const TrashScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation();
-  const { updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
+  const { updateRoomMetadata, calculateRoomMetadata, chatRooms } = useChatRooms();
   const [trashedMemos, setTrashedMemos] = useState<TrashedMemo[]>([]);
+
+  // 채팅방 이름 가져오기
+  const getRoomName = (roomId?: string) => {
+    if (!roomId) return t('memos.categories.legacy');
+    const room = chatRooms.find(r => r.id === roomId);
+    return room?.title || roomId;
+  };
+
+  // 카테고리 이름을 6자로 제한하여 반환
+  const getCategoryDisplayName = (memo: TrashedMemo) => {
+    const roomName = getRoomName(memo.roomId);
+    return roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName;
+  };
 
   useEffect(() => {
     loadTrashedMemos();
@@ -38,16 +51,36 @@ const TrashScreen: React.FC = () => {
 
   const loadTrashedMemos = async () => {
     try {
-      const storedTrashedMemos = await AsyncStorage.getItem('trashedMemos');
-      if (storedTrashedMemos) {
-        const parsedMemos = JSON.parse(storedTrashedMemos);
-        const memosWithDates = parsedMemos.map((memo: any) => ({
-          ...memo,
-          timestamp: new Date(memo.timestamp),
-          deletedAt: new Date(memo.deletedAt),
-        }));
-        setTrashedMemos(memosWithDates);
+      let allTrashedMemos: TrashedMemo[] = [];
+
+      // 모든 AsyncStorage 키를 가져와서 trashedMemos로 시작하는 키들을 찾기
+      const allKeys = await AsyncStorage.getAllKeys();
+      const trashedKeys = allKeys.filter(key => key.startsWith('trashedMemos'));
+
+      console.log('TrashScreen: Found trashed memo keys:', trashedKeys);
+
+      // 각 휴지통 키에서 데이터 로드
+      for (const key of trashedKeys) {
+        const storedTrashedMemos = await AsyncStorage.getItem(key);
+        if (storedTrashedMemos) {
+          const parsedMemos = JSON.parse(storedTrashedMemos);
+          console.log(`TrashScreen: Loaded ${parsedMemos.length} memos from ${key}`);
+          const memosWithDates = parsedMemos.map((memo: any) => ({
+            ...memo,
+            timestamp: new Date(memo.timestamp),
+            deletedAt: new Date(memo.deletedAt),
+            // roomId 정보 추가 (키에서 추출)
+            roomId: key === 'trashedMemos' ? undefined : key.replace('trashedMemos_', ''),
+          }));
+          allTrashedMemos = allTrashedMemos.concat(memosWithDates);
+        }
       }
+
+      // 삭제 시간 순으로 정렬 (최신순)
+      allTrashedMemos.sort((a, b) => b.deletedAt.getTime() - a.deletedAt.getTime());
+      
+      console.log('TrashScreen: Total trashed memos loaded:', allTrashedMemos.length);
+      setTrashedMemos(allTrashedMemos);
     } catch (error) {
       console.error('Error loading trashed memos:', error);
     }
@@ -70,11 +103,17 @@ const TrashScreen: React.FC = () => {
       memos.unshift(restoredMemo);
       await AsyncStorage.setItem(memosKey, JSON.stringify(memos));
 
-      // 채팅방별 휴지통 키 사용
+      // 채팅방별 휴지통에서 제거
       const trashedMemosKey = restoredMemo.roomId ? `trashedMemos_${restoredMemo.roomId}` : 'trashedMemos';
-      const updatedTrashedMemos = trashedMemos.filter(memo => memo.id !== id);
-      await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
-      setTrashedMemos(updatedTrashedMemos);
+      const storedTrashedMemos = await AsyncStorage.getItem(trashedMemosKey);
+      if (storedTrashedMemos) {
+        const currentTrashedMemos = JSON.parse(storedTrashedMemos);
+        const updatedTrashedMemos = currentTrashedMemos.filter((memo: any) => memo.id !== id);
+        await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
+      }
+      
+      // 전체 휴지통 목록 다시 로드
+      await loadTrashedMemos();
 
       // 메타데이터 업데이트
       if (restoredMemo.roomId) {
@@ -97,11 +136,17 @@ const TrashScreen: React.FC = () => {
       const memoToDelete = trashedMemos.find(memo => memo.id === id);
       if (!memoToDelete) return;
 
-      // 채팅방별 휴지통 키 사용
+      // 채팅방별 휴지통에서 완전 삭제
       const trashedMemosKey = memoToDelete.roomId ? `trashedMemos_${memoToDelete.roomId}` : 'trashedMemos';
-      const updatedTrashedMemos = trashedMemos.filter(memo => memo.id !== id);
-      await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
-      setTrashedMemos(updatedTrashedMemos);
+      const storedTrashedMemos = await AsyncStorage.getItem(trashedMemosKey);
+      if (storedTrashedMemos) {
+        const currentTrashedMemos = JSON.parse(storedTrashedMemos);
+        const updatedTrashedMemos = currentTrashedMemos.filter((memo: any) => memo.id !== id);
+        await AsyncStorage.setItem(trashedMemosKey, JSON.stringify(updatedTrashedMemos));
+      }
+      
+      // 전체 휴지통 목록 다시 로드
+      await loadTrashedMemos();
     } catch (error) {
       console.error('Error permanently deleting memo:', error);
     }
@@ -146,9 +191,16 @@ const TrashScreen: React.FC = () => {
   const renderTrashedItem = ({ item }: { item: TrashedMemo }) => (
     <View style={styles.memoItem}>
       <View style={styles.memoMainContent}>
-        <Text style={styles.memoTitle} numberOfLines={1}>
-          {item.title || item.content.substring(0, 10)}
-        </Text>
+        <View style={styles.memoTitleRow}>
+          <Text style={styles.memoTitle} numberOfLines={1}>
+            {item.title || item.content.substring(0, 10)}
+          </Text>
+          <View style={styles.categoryTag}>
+            <Text style={styles.categoryText}>
+              {getCategoryDisplayName(item)}
+            </Text>
+          </View>
+        </View>
         <Text style={styles.memoDate}>
           삭제일: {formatDate(item.deletedAt)}
         </Text>
@@ -205,11 +257,31 @@ const TrashScreen: React.FC = () => {
       flex: 1,
       marginRight: theme.spacing.sm,
     },
+    memoTitleRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
     memoTitle: {
       fontSize: getResponsiveFontSize(16),
       color: theme.colors.textSecondary,
       fontWeight: '500',
-      marginBottom: theme.spacing.xs,
+      flex: 1,
+      marginRight: theme.spacing.xs,
+    },
+    categoryTag: {
+      backgroundColor: theme.colors.textSecondary + '20',
+      paddingHorizontal: theme.spacing.xs,
+      paddingVertical: 2,
+      borderRadius: 12,
+      minWidth: 40,
+    },
+    categoryText: {
+      fontSize: getResponsiveFontSize(11),
+      color: theme.colors.textSecondary,
+      fontWeight: '600',
+      textAlign: 'center',
     },
     memoDate: {
       fontSize: getResponsiveFontSize(12),
