@@ -15,12 +15,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { ChatRoom, RootStackParamList } from '../types';
 import ChatRoomItem from '../components/chat/ChatRoomItem';
 import EditRoomNameModal from '../components/chat/EditRoomNameModal';
 import CreateRoomModal from '../components/chat/CreateRoomModal';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
+import { useInterstitialAd } from '../components/ads/InterstitialAdComponent';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
@@ -29,6 +31,7 @@ const ChatRoomsListScreen: React.FC = () => {
   const { theme } = useTheme();
   const { isPremium } = useSubscription();
   const navigation = useNavigation<NavigationProp>();
+  const { showInterstitialAd } = useInterstitialAd();
   
   // i18n이 아직 로드되지 않은 경우 기본값 사용
   const safeT = (key: string, defaultValue?: string) => {
@@ -152,10 +155,55 @@ const ChatRoomsListScreen: React.FC = () => {
     );
   };
 
+  // 채팅방 생성 카운터 관리
+  const getChatRoomCreationCount = async (): Promise<number> => {
+    try {
+      const count = await AsyncStorage.getItem('chatRoomCreationCount');
+      return count ? parseInt(count, 10) : 0;
+    } catch (error) {
+      console.error('채팅방 생성 카운터 로드 실패:', error);
+      return 0;
+    }
+  };
+
+  const incrementChatRoomCreationCount = async (): Promise<number> => {
+    try {
+      const currentCount = await getChatRoomCreationCount();
+      const newCount = currentCount + 1;
+      await AsyncStorage.setItem('chatRoomCreationCount', newCount.toString());
+      return newCount;
+    } catch (error) {
+      console.error('채팅방 생성 카운터 증가 실패:', error);
+      return 1; // 실패 시 기본값 반환
+    }
+  };
+
   const handleCreateRoom = async (title: string) => {
     try {
       const newRoom = await createRoom(title);
       console.log('handleCreateRoom: Created room:', newRoom.id);
+      
+      // 채팅방 생성 카운터 증가
+      const creationCount = await incrementChatRoomCreationCount();
+      console.log(`채팅방 생성 카운트: ${creationCount}`);
+      
+      // 3번마다 전면광고 표시 (프리미엄이 아닌 경우만)
+      if (!isPremium && creationCount % 3 === 0) {
+        console.log(`채팅방 ${creationCount}번째 생성 - 전면광고 표시 시도`);
+        setTimeout(async () => {
+          try {
+            const shown = await showInterstitialAd();
+            if (shown) {
+              console.log('채팅방 생성 전면광고 표시 성공');
+            } else {
+              console.log('채팅방 생성 전면광고 표시 실패 - 광고가 준비되지 않음');
+            }
+          } catch (error) {
+            console.log('채팅방 생성 전면광고 표시 중 오류:', error);
+          }
+        }, 500); // 채팅방 생성 후 0.5초 뒤에 광고 표시
+      }
+      
       navigation.navigate('ChatRoom', { roomId: newRoom.id });
     } catch (error) {
       Alert.alert(

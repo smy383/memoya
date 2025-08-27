@@ -26,6 +26,7 @@ import ChatInput from '../components/chat/ChatInput';
 import DateSeparator from '../components/chat/DateSeparator';
 import AIProcessingIndicator from '../components/chat/AIProcessingIndicator';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
+import { useInterstitialAd } from '../components/ads/InterstitialAdComponent';
 
 interface ChatListItem {
   id: string;
@@ -42,6 +43,8 @@ const ChatScreenRefactored: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { getCurrentRoom } = useChatRooms();
   const [message, setMessage] = useState('');
+  const [aiChatCount, setAiChatCount] = useState(0);
+  const { showInterstitialAd } = useInterstitialAd();
 
   // 현재 채팅방 정보 가져오기
   const currentRoom = getCurrentRoom();
@@ -67,6 +70,12 @@ const ChatScreenRefactored: React.FC = () => {
       }, 100);
     }
   }, [isAIProcessing]);
+
+  // 채팅방이 변경될 때 AI 채팅 카운터 초기화
+  useEffect(() => {
+    setAiChatCount(0);
+    console.log('채팅방 변경됨 - AI 채팅 카운터 초기화');
+  }, [currentRoom?.id]);
 
   const handleRecord = useCallback(async () => {
     if (!message.trim()) return;
@@ -114,6 +123,27 @@ const ChatScreenRefactored: React.FC = () => {
     const updatedMessages = addMessage(newMessage);
     setMessage('');
     
+    // AI 채팅 카운트 증가
+    const newChatCount = aiChatCount + 1;
+    setAiChatCount(newChatCount);
+    
+    // 8번마다 전면광고 표시 (프리미엄이 아닌 경우만)
+    if (!isPremium && newChatCount % 8 === 0) {
+      console.log(`AI 채팅 ${newChatCount}번째 - 전면광고 표시 시도`);
+      setTimeout(async () => {
+        try {
+          const shown = await showInterstitialAd();
+          if (shown) {
+            console.log('전면광고 표시 성공');
+          } else {
+            console.log('전면광고 표시 실패 - 광고가 준비되지 않음');
+          }
+        } catch (error) {
+          console.log('전면광고 표시 중 오류:', error);
+        }
+      }, 1000); // AI 응답 후 1초 뒤에 광고 표시
+    }
+    
     // 현재 채팅방 ID를 포함한 도구 실행 함수
     const roomSpecificExecuteMemoTool = (functionName: string, args: any) => {
       return executeMemoTool(functionName, args, currentRoom?.id);
@@ -130,7 +160,7 @@ const ChatScreenRefactored: React.FC = () => {
     if (aiResponse) {
       addMessage(aiResponse);
     }
-  }, [message, addMessage, sendToAI]);
+  }, [message, addMessage, sendToAI, aiChatCount, isPremium, showInterstitialAd]);
 
   const renderItem = useCallback(({ item }: { item: ChatListItem }) => {
     if (item.type === 'dateSeparator') {
