@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
-import Share from 'react-native-share';
 
 export interface BackupData {
   version: string;
@@ -10,14 +9,21 @@ export interface BackupData {
 
 export const BACKUP_VERSION = '1.0.0';
 
+const BACKUP_FILE_PATH = `${RNFS.DocumentDirectoryPath}/memoya-backup.json`;
+
 /**
- * 모든 AsyncStorage 데이터를 백업 파일로 생성
+ * 모든 AsyncStorage 데이터를 백업하여 내부 파일로 저장
  */
-export const createBackup = async (): Promise<string> => {
+export const createBackup = async (): Promise<void> => {
   try {
+    console.log('Starting backup process...');
+    
     // 모든 AsyncStorage 키와 데이터 가져오기
     const allKeys = await AsyncStorage.getAllKeys();
+    console.log('Found keys:', allKeys.length);
+    
     const allData = await AsyncStorage.multiGet(allKeys);
+    console.log('Retrieved data for keys:', allData.length);
     
     // 백업 데이터 구조 생성
     const backupData: BackupData = {
@@ -38,78 +44,139 @@ export const createBackup = async (): Promise<string> => {
       }
     });
 
-    // 백업 파일명 생성 (날짜 포함)
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-    const fileName = `memoya-backup-${timestamp}.json`;
-    const filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-
-    // 파일로 저장
-    await RNFS.writeFile(filePath, JSON.stringify(backupData, null, 2), 'utf8');
+    console.log('Backup data prepared with', Object.keys(backupData.data).length, 'keys');
     
-    console.log('Backup created:', filePath);
-    return filePath;
+    // 내부 파일로 저장
+    const backupJson = JSON.stringify(backupData, null, 2);
+    await RNFS.writeFile(BACKUP_FILE_PATH, backupJson, 'utf8');
+    
+    console.log('Backup saved to:', BACKUP_FILE_PATH);
+    
+    // 파일이 실제로 생성되었는지 확인
+    const fileExists = await RNFS.exists(BACKUP_FILE_PATH);
+    if (!fileExists) {
+      throw new Error('백업 파일 저장에 실패했습니다.');
+    }
+    
   } catch (error) {
     console.error('Error creating backup:', error);
-    throw new Error('백업 생성 중 오류가 발생했습니다.');
+    throw new Error(`백업 생성 중 오류가 발생했습니다: ${error.message}`);
   }
 };
 
 /**
- * 백업 파일을 외부로 공유
+ * 저장된 백업의 기본 정보 가져오기
  */
-export const shareBackupFile = async (filePath: string): Promise<void> => {
+export const getBackupInfo = async (): Promise<{ exists: boolean; timestamp?: string; dataCount?: number; chatRoomsCount?: number; memosCount?: number } | null> => {
   try {
-    const shareOptions = {
-      title: 'MemoYa 백업 파일',
-      message: 'MemoYa 앱의 데이터 백업 파일입니다.',
-      url: `file://${filePath}`,
-      type: 'application/json',
+    const fileExists = await RNFS.exists(BACKUP_FILE_PATH);
+    
+    if (!fileExists) {
+      return { exists: false };
+    }
+    
+    const backupContent = await RNFS.readFile(BACKUP_FILE_PATH, 'utf8');
+    const backupData: BackupData = JSON.parse(backupContent);
+    
+    let totalMemos = 0;
+    let chatRoomsCount = 0;
+    
+    // 채팅방 개수 계산
+    if (backupData.data.chatRooms && Array.isArray(backupData.data.chatRooms)) {
+      chatRoomsCount = backupData.data.chatRooms.length;
+    }
+    
+    // 메모 개수 계산 (모든 memos 키 확인)
+    Object.keys(backupData.data).forEach(key => {
+      if (key.startsWith('memos') && Array.isArray(backupData.data[key])) {
+        totalMemos += backupData.data[key].length;
+      }
+    });
+    
+    return {
+      exists: true,
+      timestamp: new Date(backupData.timestamp).toLocaleString(),
+      dataCount: Object.keys(backupData.data).length,
+      chatRoomsCount,
+      memosCount: totalMemos
     };
-
-    await Share.open(shareOptions);
+    
   } catch (error) {
-    console.error('Error sharing backup file:', error);
-    if (error.message !== 'User did not share') {
-      throw new Error('백업 파일 공유 중 오류가 발생했습니다.');
-    }
+    console.error('Error getting backup info:', error);
+    return { exists: false };
   }
 };
 
 /**
- * 백업 파일을 선택하여 가져오기 (간단한 텍스트 입력 방식)
+ * 내부 백업에서 데이터 복구
  */
-export const pickBackupFile = async (): Promise<string | null> => {
-  // 현재는 Document Picker 없이 구현
-  // 사용자가 백업 파일 경로를 직접 입력하거나 
-  // 다른 방식으로 파일을 가져올 수 있음
-  throw new Error('파일 선택 기능은 현재 개발 중입니다. 백업 생성 기능을 사용해주세요.');
-};
-
-/**
- * 백업 파일의 내용을 검증하고 파싱
- */
-export const validateBackupFile = async (filePath: string): Promise<BackupData> => {
+export const restoreFromInternalBackup = async (): Promise<void> => {
   try {
-    const fileContent = await RNFS.readFile(filePath, 'utf8');
-    const backupData: BackupData = JSON.parse(fileContent);
-
-    // 백업 파일 구조 검증
+    const fileExists = await RNFS.exists(BACKUP_FILE_PATH);
+    
+    if (!fileExists) {
+      throw new Error('저장된 백업이 없습니다. 먼저 백업을 만들어주세요.');
+    }
+    
+    const backupContent = await RNFS.readFile(BACKUP_FILE_PATH, 'utf8');
+    const backupData: BackupData = JSON.parse(backupContent);
+    
+    // 백업 데이터 검증
     if (!backupData.version || !backupData.timestamp || !backupData.data) {
-      throw new Error('올바르지 않은 백업 파일 형식입니다.');
+      throw new Error('올바르지 않은 백업 데이터 형식입니다.');
     }
-
-    // 버전 호환성 검사 (필요에 따라 확장 가능)
-    if (backupData.version !== BACKUP_VERSION) {
-      console.warn(`Backup version mismatch: ${backupData.version} vs ${BACKUP_VERSION}`);
-    }
-
-    return backupData;
+    
+    // 백업 데이터를 AsyncStorage로 복구
+    await restoreFromBackup(backupData);
+    
+    console.log('Successfully restored from internal backup');
+    
   } catch (error) {
-    console.error('Error validating backup file:', error);
-    if (error.message.includes('올바르지 않은')) {
+    console.error('Error restoring from internal backup:', error);
+    if (error.message.includes('저장된 백업이 없습니다') || error.message.includes('올바르지 않은')) {
       throw error;
     }
-    throw new Error('백업 파일을 읽을 수 없습니다.');
+    throw new Error('백업 복구 중 오류가 발생했습니다.');
+  }
+};
+
+/**
+ * 백업 파일을 Downloads 폴더로 내보내기
+ */
+export const exportBackupToFile = async (): Promise<string> => {
+  try {
+    const fileExists = await RNFS.exists(BACKUP_FILE_PATH);
+    
+    if (!fileExists) {
+      throw new Error('내보낼 백업이 없습니다. 먼저 백업을 만들어주세요.');
+    }
+    
+    const backupContent = await RNFS.readFile(BACKUP_FILE_PATH, 'utf8');
+    
+    // Downloads 폴더에 날짜와 시간이 포함된 파일명으로 저장
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
+    const exportFileName = `memoya-backup-${timestamp}.json`;
+    const exportFilePath = `${RNFS.DownloadDirectoryPath}/${exportFileName}`;
+    
+    console.log('Exporting backup to:', exportFilePath);
+    
+    await RNFS.writeFile(exportFilePath, backupContent, 'utf8');
+    
+    // 파일이 실제로 생성되었는지 확인
+    const exportedFileExists = await RNFS.exists(exportFilePath);
+    if (!exportedFileExists) {
+      throw new Error('백업 파일 내보내기에 실패했습니다.');
+    }
+    
+    console.log('Backup exported to Downloads folder successfully');
+    return exportFilePath;
+    
+  } catch (error) {
+    console.error('Error exporting backup to file:', error);
+    if (error.message.includes('내보낼 백업이 없습니다') || error.message.includes('백업 파일 내보내기에 실패')) {
+      throw error;
+    }
+    throw new Error('백업 파일 내보내기 중 오류가 발생했습니다.');
   }
 };
 
@@ -139,35 +206,62 @@ export const restoreFromBackup = async (backupData: BackupData): Promise<void> =
 };
 
 /**
- * 백업 파일 정보 추출
+ * Downloads 폴더에서 백업 파일 목록 가져오기
  */
-export const getBackupInfo = (backupData: BackupData): { 
-  version: string;
-  timestamp: string;
-  dataCount: number;
-  chatRoomsCount: number;
-  memosCount: number;
-} => {
-  let totalMemos = 0;
-  let chatRoomsCount = 0;
-
-  // 채팅방 개수 계산
-  if (backupData.data.chatRooms && Array.isArray(backupData.data.chatRooms)) {
-    chatRoomsCount = backupData.data.chatRooms.length;
+export const getDownloadBackupFiles = async (): Promise<string[]> => {
+  try {
+    const downloadPath = RNFS.DownloadDirectoryPath;
+    const files = await RNFS.readDir(downloadPath);
+    
+    // memoya-backup으로 시작하고 .json으로 끝나는 파일들만 필터링
+    const backupFiles = files
+      .filter(file => 
+        file.name.startsWith('memoya-backup') && 
+        file.name.endsWith('.json') && 
+        file.isFile()
+      )
+      .map(file => file.path)
+      .sort((a, b) => b.localeCompare(a)); // 최신 파일이 먼저 오도록 정렬
+    
+    console.log('Found backup files:', backupFiles.length);
+    return backupFiles;
+    
+  } catch (error) {
+    console.error('Error getting download backup files:', error);
+    return [];
   }
-
-  // 메모 개수 계산 (모든 memos 키 확인)
-  Object.keys(backupData.data).forEach(key => {
-    if (key.startsWith('memos') && Array.isArray(backupData.data[key])) {
-      totalMemos += backupData.data[key].length;
-    }
-  });
-
-  return {
-    version: backupData.version,
-    timestamp: new Date(backupData.timestamp).toLocaleString(),
-    dataCount: Object.keys(backupData.data).length,
-    chatRoomsCount,
-    memosCount: totalMemos
-  };
 };
+
+/**
+ * 파일에서 백업 데이터를 가져와서 복구
+ */
+export const restoreFromFile = async (filePath: string): Promise<void> => {
+  try {
+    const fileExists = await RNFS.exists(filePath);
+    
+    if (!fileExists) {
+      throw new Error('선택한 백업 파일을 찾을 수 없습니다.');
+    }
+    
+    const backupContent = await RNFS.readFile(filePath, 'utf8');
+    const backupData: BackupData = JSON.parse(backupContent);
+    
+    // 백업 데이터 검증
+    if (!backupData.version || !backupData.timestamp || !backupData.data) {
+      throw new Error('올바르지 않은 백업 파일 형식입니다.');
+    }
+    
+    // 백업 데이터를 AsyncStorage로 복구
+    await restoreFromBackup(backupData);
+    
+    console.log('Successfully restored from file backup');
+    
+  } catch (error) {
+    console.error('Error restoring from file:', error);
+    if (error.message.includes('선택한 백업 파일') || error.message.includes('올바르지 않은')) {
+      throw error;
+    }
+    throw new Error('파일 복구 중 오류가 발생했습니다.');
+  }
+};
+

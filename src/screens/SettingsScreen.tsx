@@ -21,7 +21,8 @@ import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import LanguageSelector from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
-import { createBackup, shareBackupFile } from '../services/backupService';
+import { createBackup, getBackupInfo, restoreFromInternalBackup, exportBackupToFile, restoreFromFile } from '../services/backupService';
+import BackupFilePicker from '../components/BackupFilePicker';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -32,6 +33,9 @@ const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const [isLanguageSelectorVisible, setIsLanguageSelectorVisible] = useState(false);
   const [isBackupCreating, setIsBackupCreating] = useState(false);
+  const [isBackupRestoring, setIsBackupRestoring] = useState(false);
+  const [backupInfo, setBackupInfo] = useState<{exists: boolean; timestamp?: string; dataCount?: number; chatRoomsCount?: number; memosCount?: number} | null>(null);
+  const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
 
   // i18n이 아직 로드되지 않은 경우 기본값 사용
   const safeT = (key: string, defaultValue?: string) => {
@@ -109,11 +113,26 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  // 백업 정보 로드
+  const loadBackupInfo = async () => {
+    try {
+      const info = await getBackupInfo();
+      setBackupInfo(info);
+    } catch (error) {
+      console.error('Error loading backup info:', error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 백업 정보 로드
+  React.useEffect(() => {
+    loadBackupInfo();
+  }, []);
+
   const handleCreateBackup = async () => {
     try {
       setIsBackupCreating(true);
-      const backupFilePath = await createBackup();
-      await shareBackupFile(backupFilePath);
+      await createBackup();
+      await loadBackupInfo(); // 백업 정보 새로고침
       Alert.alert(t('common.success'), t('settings.dataManagement.backupSuccess'));
     } catch (error) {
       console.error('Error creating backup:', error);
@@ -124,12 +143,96 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleRestoreBackup = async () => {
+    if (!backupInfo?.exists) {
+      Alert.alert(t('common.error'), t('settings.dataManagement.noInternalBackup'));
+      return;
+    }
+
     Alert.alert(
-      t('common.info'),
-      '백업 복구 기능은 곧 추가될 예정입니다.\n현재는 백업 생성 기능만 사용 가능합니다.',
-      [{ text: t('common.confirm') }]
+      t('settings.dataManagement.restoreTitle'),
+      t('settings.dataManagement.internalRestoreMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsBackupRestoring(true);
+              await restoreFromInternalBackup();
+              
+              Alert.alert(
+                t('common.success'),
+                t('settings.dataManagement.restoreSuccess'),
+                [{ text: t('common.confirm') }]
+              );
+            } catch (error) {
+              console.error('Error restoring backup:', error);
+              Alert.alert(t('common.error'), t('settings.dataManagement.restoreError'));
+            } finally {
+              setIsBackupRestoring(false);
+            }
+          }
+        }
+      ]
     );
   };
+
+  const handleExportBackup = async () => {
+    if (!backupInfo?.exists) {
+      Alert.alert(t('common.error'), t('settings.dataManagement.noInternalBackup'));
+      return;
+    }
+
+    try {
+      const exportedFilePath = await exportBackupToFile();
+      const fileName = exportedFilePath.split('/').pop();
+      Alert.alert(
+        t('common.success'), 
+        `백업이 Downloads 폴더에 저장되었습니다.\n파일명: ${fileName}`
+      );
+    } catch (error) {
+      console.error('Error exporting backup:', error);
+      Alert.alert(t('common.error'), t('settings.dataManagement.exportError'));
+    }
+  };
+
+  const handleImportBackup = () => {
+    setIsFilePickerVisible(true);
+  };
+
+  const handleFileSelected = async (filePath: string) => {
+    Alert.alert(
+      '백업 파일에서 복구',
+      `선택한 파일에서 데이터를 복구하시겠습니까?\n\n현재 모든 데이터가 삭제되고 백업 데이터로 대체됩니다.`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsBackupRestoring(true);
+              await restoreFromFile(filePath);
+              await loadBackupInfo(); // 백업 정보 새로고침
+              
+              Alert.alert(
+                t('common.success'),
+                '백업 파일이 성공적으로 복구되었습니다.',
+                [{ text: t('common.confirm') }]
+              );
+            } catch (error) {
+              console.error('Error importing backup from file:', error);
+              Alert.alert(t('common.error'), '백업 파일 복구 중 오류가 발생했습니다.');
+            } finally {
+              setIsBackupRestoring(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
 
   const resetAllData = () => {
     Alert.alert(
@@ -479,11 +582,14 @@ const SettingsScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.settingItem}>
             <View style={styles.settingLabelWithIcon}>
-              <Icon name="document-outline" size={20} color={theme.colors.primary} />
+              <Icon name="folder-outline" size={20} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.settingLabel}>{t('settings.dataManagement.backupRestore')}</Text>
+                <Text style={styles.settingLabel}>저장된 백업</Text>
                 <Text style={[styles.settingValue, { fontSize: getResponsiveFontSize(12), marginTop: 2 }]}>
-                  {t('settings.dataManagement.backupDescription')}
+                  {backupInfo?.exists 
+                    ? `${backupInfo.timestamp} (${backupInfo.dataCount}개 항목)`
+                    : '백업 없음'
+                  }
                 </Text>
               </View>
             </View>
@@ -494,7 +600,7 @@ const SettingsScreen: React.FC = () => {
             disabled={isBackupCreating}
           >
             <View style={styles.settingLabelWithIcon}>
-              <Icon name="cloud-upload-outline" size={20} color={theme.colors.primary} />
+              <Icon name="save-outline" size={20} color={theme.colors.primary} />
               <Text style={styles.settingLabel}>{t('settings.dataManagement.createBackup')}</Text>
             </View>
             {isBackupCreating ? (
@@ -504,14 +610,49 @@ const SettingsScreen: React.FC = () => {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.settingItem, styles.lastSettingItem]}
+            style={styles.settingItem}
             onPress={handleRestoreBackup}
+            disabled={isBackupRestoring || !backupInfo?.exists}
           >
             <View style={styles.settingLabelWithIcon}>
-              <Icon name="cloud-download-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>{t('settings.dataManagement.restoreBackup')}</Text>
+              <Icon name="refresh-outline" size={20} color={backupInfo?.exists ? theme.colors.primary : theme.colors.textSecondary} />
+              <Text style={[styles.settingLabel, { color: backupInfo?.exists ? theme.colors.text : theme.colors.textSecondary }]}>
+                {t('settings.dataManagement.restoreBackup')}
+              </Text>
             </View>
-            <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
+            {isBackupRestoring ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Icon name="chevron-forward-outline" size={20} color={backupInfo?.exists ? theme.colors.textSecondary : '#ccc'} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={handleExportBackup}
+            disabled={!backupInfo?.exists}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="share-outline" size={20} color={backupInfo?.exists ? theme.colors.primary : theme.colors.textSecondary} />
+              <Text style={[styles.settingLabel, { color: backupInfo?.exists ? theme.colors.text : theme.colors.textSecondary }]}>
+                백업 내보내기
+              </Text>
+            </View>
+            <Icon name="chevron-forward-outline" size={20} color={backupInfo?.exists ? theme.colors.textSecondary : '#ccc'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.settingItem, styles.lastSettingItem]}
+            onPress={handleImportBackup}
+            disabled={isBackupRestoring}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="folder-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.settingLabel}>파일에서 가져오기</Text>
+            </View>
+            {isBackupRestoring ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -528,6 +669,12 @@ const SettingsScreen: React.FC = () => {
       <LanguageSelector
         visible={isLanguageSelectorVisible}
         onClose={closeLanguageSelector}
+      />
+      
+      <BackupFilePicker
+        visible={isFilePickerVisible}
+        onClose={() => setIsFilePickerVisible(false)}
+        onFileSelect={handleFileSelected}
       />
     </SafeAreaView>
   );
