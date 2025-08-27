@@ -18,9 +18,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { Memo } from '../types';
 import { getResponsiveFontSize } from '../utils/dimensions';
 import { useChatRooms } from '../hooks/useChatRooms';
+import BannerAdComponent from '../components/ads/BannerAdComponent';
 
 interface ExtendedMemo extends Omit<Memo, 'roomId'> {
   isFavorite?: boolean;
@@ -35,6 +37,7 @@ interface TrashedMemo extends ExtendedMemo {
 const MemosScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
+  const { isPremium } = useSubscription();
   const { chatRooms, updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
   const [memos, setMemos] = useState<ExtendedMemo[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -482,6 +485,9 @@ const MemosScreen: React.FC = () => {
           onChangeText={setSearchText}
         />
       </View>
+
+      {/* 프리미엄이 아닌 경우에만 배너 광고 표시 */}
+      {!isPremium && <BannerAdComponent screenName="memos" />}
 
       {filteredMemos.length > 0 ? (
         <FlatList

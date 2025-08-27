@@ -1,4 +1,7 @@
 {
   "name": "MemoApp",
-  "displayName": "MemoApp"
+  "displayName": "MemoApp",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3519978756490462~8148471148"
+  }
 }

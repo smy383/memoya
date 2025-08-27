@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +16,7 @@ import TrashScreen from '../screens/TrashScreen';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createStackNavigator<RootStackParamList>();
 
-const MainTabNavigator: React.FC = () => {
+const TabsWithAd: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
 
@@ -91,6 +92,10 @@ const MainTabNavigator: React.FC = () => {
       />
     </Tab.Navigator>
   );
+};
+
+const MainTabNavigator: React.FC = () => {
+  return <TabsWithAd />;
 };
 
 const TabNavigator: React.FC = () => {

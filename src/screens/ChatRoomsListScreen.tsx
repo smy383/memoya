@@ -13,18 +13,21 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { ChatRoom, RootStackParamList } from '../types';
 import ChatRoomItem from '../components/chat/ChatRoomItem';
 import EditRoomNameModal from '../components/chat/EditRoomNameModal';
 import CreateRoomModal from '../components/chat/CreateRoomModal';
+import BannerAdComponent from '../components/ads/BannerAdComponent';
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const ChatRoomsListScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { isPremium } = useSubscription();
   const navigation = useNavigation<NavigationProp>();
   
   // i18n이 아직 로드되지 않은 경우 기본값 사용
@@ -170,17 +173,44 @@ const ChatRoomsListScreen: React.FC = () => {
     setIsCreateModalVisible(false);
   };
 
-  const renderChatRoomItem = ({ item }: { item: ChatRoom }) => (
-    <ChatRoomItem
-      chatRoom={item}
-      onPress={handleRoomPress}
-      onLongPress={handleRoomLongPress}
-      isCurrentRoom={item.id === currentRoomId}
-      isEditMode={isEditMode}
-      onEdit={handleEditRoom}
-      onDelete={handleDeleteRoom}
-    />
-  );
+  // 채팅방 목록과 광고를 혼합한 데이터 생성
+  const mixedData = useMemo(() => {
+    if (isPremium) {
+      return chatRooms.map(room => ({ type: 'chatRoom', data: room }));
+    }
+
+    const result: Array<{ type: 'chatRoom' | 'ad'; data?: ChatRoom; adIndex?: number }> = [];
+    chatRooms.forEach((room, index) => {
+      result.push({ type: 'chatRoom', data: room });
+      // 3개마다 광고 삽입 (인덱스 2, 5, 8, ... 다음에)
+      if ((index + 1) % 3 === 0 && index < chatRooms.length - 1) {
+        result.push({ type: 'ad', adIndex: Math.floor(index / 3) });
+      }
+    });
+    return result;
+  }, [chatRooms, isPremium]);
+
+  const renderItem = ({ item }: { item: { type: 'chatRoom' | 'ad'; data?: ChatRoom; adIndex?: number } }) => {
+    if (item.type === 'ad') {
+      return <BannerAdComponent screenName="chat" />;
+    }
+    
+    if (item.data) {
+      return (
+        <ChatRoomItem
+          chatRoom={item.data}
+          onPress={handleRoomPress}
+          onLongPress={handleRoomLongPress}
+          isCurrentRoom={item.data.id === currentRoomId}
+          isEditMode={isEditMode}
+          onEdit={handleEditRoom}
+          onDelete={handleDeleteRoom}
+        />
+      );
+    }
+    
+    return null;
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -294,10 +324,15 @@ const ChatRoomsListScreen: React.FC = () => {
 
       <View style={styles.listContainer}>
         <FlatList
-          data={chatRooms}
-          renderItem={renderChatRoomItem}
-          keyExtractor={(item) => item.id}
+          data={mixedData}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => 
+            item.type === 'ad' 
+              ? `ad-${item.adIndex || index}` 
+              : item.data?.id || `item-${index}`
+          }
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={!isPremium ? <BannerAdComponent screenName="chat" /> : null}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
