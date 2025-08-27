@@ -192,8 +192,6 @@ export const useAI = () => {
       setIsAIProcessing(true);
       setAiProcessingStatus(getProcessingMessage('', 'analyzing'));
 
-      const apiKey = API_CONFIG.GEMINI_API_KEY;
-      const model = API_CONFIG.GEMINI_MODEL;
       const systemPrompt = generateSystemPrompt(userMessage);
 
       const conversationHistory = currentMessages
@@ -212,7 +210,12 @@ export const useAI = () => {
 
       const tools = [{ functionDeclarations: memoTools }];
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      // 프록시 서버 또는 직접 API 호출 선택
+      const apiUrl = API_CONFIG.USE_PROXY 
+        ? `${API_CONFIG.PROXY_SERVER_URL}/api/gemini`
+        : `https://generativelanguage.googleapis.com/v1beta/models/${API_CONFIG.GEMINI_MODEL}:generateContent?key=${API_CONFIG.GEMINI_API_KEY}`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -263,7 +266,7 @@ export const useAI = () => {
             }
           ];
           
-          const followUpResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          const followUpResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

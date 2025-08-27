@@ -395,3 +395,145 @@ generate_summary: {
 - JavaScript logs available in React Native DevTools (type `j` in Metro terminal)
 - Use Android-first development approach
 - Hot reload enabled by default for rapid development
+
+## Railway CLI 성공 가이드 📝
+
+### 🎯 **Claude Code 환경에서 Railway CLI 사용법**
+
+Railway CLI를 Claude Code 환경에서 성공적으로 사용하는 방법입니다.
+
+### 🔧 **필수 준비사항**
+
+1. **Railway CLI 설치**
+   ```bash
+   npm install -g @railway/cli
+   ```
+
+2. **Railway Token 생성**
+   - Railway 대시보드 → Account Settings → Tokens
+   - "New Token" 생성 (예: `memoya-proxy`)
+
+### 📋 **단계별 성공 방법**
+
+#### **1단계: 토큰 인증**
+```bash
+# 토큰을 config 파일에 저장 (이 방법이 성공!)
+echo "YOUR_RAILWAY_TOKEN" > ~/.railway-token
+
+# 인증 확인
+railway whoami
+# 출력: Logged in as your-email@domain.com 👋
+```
+
+**❌ 실패한 방법들:**
+```bash
+# 이런 방법들은 Claude Code에서 작동하지 않음
+export RAILWAY_TOKEN=token  # 환경변수 방식
+railway login               # 브라우저 인증 방식
+```
+
+#### **2단계: 프로젝트 목록 확인**
+```bash
+railway list
+# GitHub 레포지토리명과 Railway 프로젝트명이 다를 수 있음!
+```
+
+#### **3단계: 프로젝트 연결**
+```bash
+# 프로젝트명을 직접 지정 (이 방법이 성공!)
+railway link -p actual-project-name
+
+# ❌ 실패 방법 (interactive 모드)
+railway link  # TTY 오류 발생
+```
+
+#### **4단계: 서비스 연결**
+```bash
+# 서비스명 지정 (GitHub 레포지토리명 사용)
+railway service your-service-name
+```
+
+#### **5단계: 환경변수 설정**
+```bash
+# --set 플래그 사용
+railway variables --set "KEY1=value1"
+railway variables --set "KEY2=value2"
+
+# 설정 확인
+railway variables
+```
+
+#### **6단계: 공개 도메인 생성**
+```bash
+railway domain
+# 출력: Service Domain created:
+# 🚀 https://your-service-production.up.railway.app
+```
+
+### 🔍 **핵심 성공 포인트**
+
+#### **1. 토큰 저장 방식**
+```bash
+# ✅ 성공 방법
+echo "token" > ~/.railway-token
+
+# ❌ 실패 방법  
+export RAILWAY_TOKEN=token
+```
+
+#### **2. Claude Code 환경 특성**
+- **Interactive 모드 불가**: 선택 메뉴가 나오는 명령어들은 실패
+- **TTY 제한**: 사용자 입력이 필요한 명령어들은 모두 직접 지정해야 함
+
+### 🎯 **재현 가능한 완전한 스크립트**
+
+```bash
+# 1. 토큰 설정
+echo "YOUR_RAILWAY_TOKEN" > ~/.railway-token
+
+# 2. 인증 확인  
+railway whoami
+
+# 3. 프로젝트 목록 확인
+railway list
+
+# 4. 프로젝트 연결 (실제 프로젝트명 사용)
+railway link -p actual-project-name
+
+# 5. 서비스 연결 (GitHub 레포지토리명 사용)
+railway service your-service-name
+
+# 6. 환경변수 설정
+railway variables --set "KEY1=value1"
+railway variables --set "KEY2=value2"
+
+# 7. 도메인 생성
+railway domain
+
+# 8. 상태 확인
+railway variables
+```
+
+### ⚠️ **주의사항**
+
+1. **프로젝트명 ≠ 레포지토리명**: `railway list`로 실제 프로젝트명 확인 필요
+2. **토큰 보안**: 토큰은 절대 공개하지 말 것
+3. **Claude Code 한계**: Interactive 명령어들은 모두 직접 지정 방식으로 우회
+
+### 🚀 **프록시 서버 보안 아키텍처**
+
+메모야 앱은 AI 기능을 위한 프록시 서버를 사용하여 API 키 보안을 강화합니다:
+
+```
+[메모야 앱] → [Railway 프록시 서버] → [Gemini API]
+                      ↑
+                환경변수로 API 키 관리
+```
+
+**프록시 서버 엔드포인트:**
+- `GET /` - 서버 상태 확인
+- `POST /api/gemini` - Gemini AI API 프록시
+
+**환경변수:**
+- `GEMINI_API_KEY` - Google Gemini API 키
+- `GEMINI_MODEL` - 사용할 Gemini 모델 (기본: gemini-1.5-flash-8b)
