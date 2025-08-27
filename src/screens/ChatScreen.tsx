@@ -75,6 +75,15 @@ const ChatScreen: React.FC = () => {
   }, [chatListData.length]);
 
   useEffect(() => {
+    // 채팅방 변경 시 데이터 로드 완료 후 하단으로 스크롤
+    if (activeRoomId && chatListData.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 300); // 데이터 로딩 완료를 위해 좀 더 긴 지연시간 적용
+    }
+  }, [activeRoomId, chatListData]);
+
+  useEffect(() => {
     // AI 처리 상태가 변경될 때도 하단으로 스크롤
     if (isAIProcessing) {
       setTimeout(() => {
