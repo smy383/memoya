@@ -76,3 +76,7 @@ yarn-error.log
 
 # Environment variables
 .env
+
+# Keystore files (production signing)
+*.keystore
+!debug.keystore

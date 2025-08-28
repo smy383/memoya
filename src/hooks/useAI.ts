@@ -24,7 +24,44 @@ export const useAI = () => {
     const prompts = {
       ko: `당신은 사용자의 개인 메모 도우미입니다. 
 
-**중요: 도구 사용 전에 반드시 사용자의 의도를 정확히 파악하세요.**
+## 🚨 최우선 규칙 - 반드시 따라야 함
+
+**도구 실행 결과를 받았을 때:**
+1. **결과의 'data' 필드를 반드시 확인하고 활용하세요**
+2. **메모 내용(content)을 찾았다면 반드시 그 내용을 답변에 포함시키세요**
+3. **절대 "메모를 찾을 수 없습니다" 또는 "내용을 알 수 없습니다"라고 하지 마세요 (데이터가 있는 경우)**
+
+## 🎯 도구 결과 활용 템플릿
+
+### search_memos 결과를 받았을 때:
+- data 배열에 메모가 있다면:
+  "N개의 메모를 찾았습니다:
+   1. [날짜]: [메모 내용 전체 또는 요약]
+   2. [날짜]: [메모 내용 전체 또는 요약]
+   ..."
+- data가 빈 배열이면:
+  "검색 조건에 맞는 메모가 없습니다."
+
+### get_memo_stats 결과를 받았을 때:
+- totalCount가 있다면:
+  "총 N개의 메모가 저장되어 있습니다."
+- recentMemos가 있다면:
+  "최근 메모들: [각 메모 내용 표시]"
+
+### generate_summary 결과를 받았을 때:
+- summary와 memos가 있다면:
+  "[요약 내용]
+   
+   주요 메모들:
+   - [메모 1 내용]
+   - [메모 2 내용]"
+
+### extract_tasks 결과를 받았을 때:
+- tasks 배열이 있다면:
+  "N개의 작업을 발견했습니다:
+   ✓ [작업 1]
+   ✓ [작업 2]
+   (출처: [메모 내용 일부])"
 
 ## 도구 사용 규칙
 
@@ -55,35 +92,22 @@ export const useAI = () => {
 1. **먼저 사용자 메시지의 의도를 파악하세요**
 2. **메모 정보가 실제로 필요한지 판단하세요**
 3. **메모 관련 질문이면 반드시 도구부터 사용하세요 (추측하지 말고 실제 데이터 확인)**
-4. **불필요한 경우에만 자연스럽게 대화하세요**
-5. **도구를 사용한 경우, 찾은 메모 내용을 적극적으로 활용하여 유용한 답변을 제공하세요**
-6. **메모 내용이 있다면 그 내용을 바탕으로 구체적이고 도움이 되는 답변을 하세요**
+4. **도구 실행 결과의 data 필드를 반드시 확인하고 메모 내용을 답변에 포함시키세요**
+5. **불필요한 경우에만 자연스럽게 대화하세요**
 
-## 중요한 원칙:
-**메모에 대한 어떤 질문이든 항상 실제 메모 데이터를 먼저 확인하고 답변하세요.**
-- "메모가 있나요?" → get_memo_stats 사용
-- "어떤 내용이에요?" → search_memos 사용  
-- "메모 확인" → search_memos 사용
+## 🔴 금지 사항:
+- 도구 결과에 메모가 있는데 "정보가 부족합니다"라고 하지 마세요
+- 도구 결과에 메모가 있는데 "메모를 찾을 수 없습니다"라고 하지 마세요
+- 도구 결과에 content가 있는데 "내용을 알 수 없습니다"라고 하지 마세요
+- 단순히 "N개의 메모를 찾았습니다"만 답하지 마세요 - 반드시 내용도 표시하세요
 
 ## 메모 수정/삭제 시 중요한 절차:
 1. **반드시 먼저 search_memos로 관련 메모를 검색하세요**
-2. **검색 결과에서 정확한 메모 ID를 확인하세요**
-3. **사용자에게 어떤 메모를 수정/삭제할지 확인받으세요**
+2. **검색 결과에서 정확한 메모 ID와 내용을 확인하세요**
+3. **사용자에게 어떤 메모를 수정/삭제할지 내용과 함께 보여주고 확인받으세요**
 4. **확인 후 update_memo 또는 delete_memo를 실행하세요**
 
-예시:
-- 사용자: "자전거 수리 메모 수정해줘"
-- AI: search_memos(keyword: "자전거") 실행 → 결과 확인 → "자전거 관련 메모를 찾았습니다. 어떻게 수정하시겠습니까?" → 사용자 답변 후 update_memo 실행
-
-사용자와 친근하고 자연스러운 대화를 나누되, 메모 관련 도움이 필요할 때만 도구를 활용하세요. 
-도구로 메모를 찾았다면 그 내용을 바탕으로 구체적이고 유용한 정보를 제공하세요. 
-단순히 "메모를 찾았습니다"가 아니라 실제 메모 내용을 활용한 답변을 해주세요.
-
-## 중요: 도구 실행 결과 활용 규칙
-- search_memos 결과에 메모가 있다면 반드시 그 내용을 인용하거나 요약해서 답변하세요
-- "정보가 부족합니다"라고 답변하지 마세요. 찾은 메모 내용을 활용하세요
-- 메모 내용이 사용자 질문과 관련이 있다면 구체적으로 설명해주세요
-- 예시: "사업계획서 관련 메모를 찾았습니다. 메모에 따르면 [실제 메모 내용 요약]입니다."`,
+**기억하세요: 도구 실행 결과의 data 필드에 있는 모든 메모 내용을 활용해서 구체적이고 유용한 답변을 제공해야 합니다.**`,
       
       en: `You are a friendly and helpful memo assistant.
 - Use the provided tools only when you need information about the user's memos to answer a question
@@ -113,6 +137,57 @@ export const useAI = () => {
     
     return prompts[detectedLang as keyof typeof prompts] || prompts.en;
   }, [detectLanguage]);
+
+  const validateAndEnhanceAIResponse = useCallback((aiResponse: string, toolResult: any, functionName: string): string => {
+    // 도구 결과가 있는 경우 응답 품질 검증
+    if (!toolResult || !toolResult.success || !toolResult.data) {
+      return aiResponse;
+    }
+
+    // 문제가 있는 응답 패턴 감지
+    const problematicPatterns = [
+      /메모를 찾을 수 없습니다/i,
+      /내용을 알 수 없습니다/i,
+      /정보가 부족합니다/i,
+      /데이터가 없습니다/i,
+      /찾은 메모가 없습니다/i
+    ];
+
+    const hasProblematicResponse = problematicPatterns.some(pattern => pattern.test(aiResponse));
+
+    // 실제로는 메모가 있는데 문제가 있는 응답인 경우
+    if (hasProblematicResponse && toolResult.data) {
+      console.warn('⚠️ AI가 부적절한 응답을 했습니다. 응답을 개선합니다:', aiResponse);
+      
+      // 도구별로 적절한 fallback 응답 생성
+      switch (functionName) {
+        case 'search_memos':
+          if (Array.isArray(toolResult.data) && toolResult.data.length > 0) {
+            return toolResult.message || `${toolResult.data.length}개의 메모를 찾았습니다.\n\n${toolResult.data.map((memo: any, index: number) => 
+              `${index + 1}. [${new Date(memo.timestamp).toLocaleString('ko-KR')}]\n${memo.content}`
+            ).join('\n\n')}`;
+          }
+          break;
+          
+        case 'get_memo_stats':
+          return toolResult.message || toolResult.data.message || '메모 통계를 조회했습니다.';
+          
+        case 'generate_summary':
+          return toolResult.message || '메모 요약을 생성했습니다.';
+          
+        case 'extract_tasks':
+          return toolResult.message || '작업 추출을 완료했습니다.';
+      }
+    }
+
+    // 응답이 너무 짧고 일반적인 경우 (도구 결과가 있는데)
+    if (aiResponse.length < 50 && toolResult.data && toolResult.message) {
+      console.warn('⚠️ AI 응답이 너무 짧습니다. message로 보완합니다.');
+      return toolResult.message;
+    }
+
+    return aiResponse;
+  }, []);
 
   const extractSourceMemos = useCallback((toolResult: any): SourceMemo[] => {
     if (!toolResult || !toolResult.success || !toolResult.data) {
@@ -248,8 +323,14 @@ export const useAI = () => {
             functionCall.functionCall.args
           );
           
-          // 디버깅: 도구 결과 확인
-          console.log('Tool Result:', JSON.stringify(toolResult, null, 2));
+          // 상세 디버깅 로그
+          console.log('🔧 Tool Execution Details:');
+          console.log('- Function:', functionCall.functionCall.name);
+          console.log('- Args:', JSON.stringify(functionCall.functionCall.args, null, 2));
+          console.log('- Result Success:', toolResult.success);
+          console.log('- Result Data Length:', Array.isArray(toolResult.data) ? toolResult.data.length : 'Not Array');
+          console.log('- Result Message Length:', toolResult.message ? toolResult.message.length : 0);
+          console.log('- Full Tool Result:', JSON.stringify(toolResult, null, 2));
           
           setAiProcessingStatus(getProcessingMessage(functionCall.functionCall.name, 'generating'));
           
@@ -289,15 +370,34 @@ export const useAI = () => {
           if (followUpResponse.ok && followUpData.candidates && followUpData.candidates[0]?.content?.parts?.[0]?.text) {
             // 소스 메모 추출
             const sourceMemos = extractSourceMemos(toolResult);
+            let aiResponseContent = followUpData.candidates[0].content.parts[0].text;
+            
+            // AI 원본 응답 로깅
+            console.log('🤖 AI Original Response:');
+            console.log('- Length:', aiResponseContent.length);
+            console.log('- Content Preview:', aiResponseContent.substring(0, 200) + (aiResponseContent.length > 200 ? '...' : ''));
+            
+            // AI 응답 검증 및 개선
+            const originalResponse = aiResponseContent;
+            aiResponseContent = validateAndEnhanceAIResponse(aiResponseContent, toolResult, functionCall.functionCall.name);
+            
+            if (originalResponse !== aiResponseContent) {
+              console.log('✅ AI Response Enhanced:');
+              console.log('- New Length:', aiResponseContent.length);
+              console.log('- Enhanced Preview:', aiResponseContent.substring(0, 200) + (aiResponseContent.length > 200 ? '...' : ''));
+            }
+            
+            console.log('📊 Source Memos Count:', sourceMemos.length);
             
             return {
               id: Date.now().toString() + '_ai',
-              content: followUpData.candidates[0].content.parts[0].text,
+              content: aiResponseContent,
               timestamp: new Date(),
               type: 'ai',
               sourceMemos: sourceMemos,
             };
           } else {
+            console.error('❌ Follow-up API Response Error:', followUpData);
             throw new Error(followUpData.error?.message || t('api.error'));
           }
         } else if (parts[0]?.text) {

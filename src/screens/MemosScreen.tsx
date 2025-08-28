@@ -155,8 +155,14 @@ const MemosScreen: React.FC = () => {
     useCallback(() => {
       console.log('MemosScreen: Screen focused, loading memos');
       loadMemos();
-    }, []) // 의존성 제거하여 항상 새로고침
+    }, [chatRooms]) // chatRooms가 변경되면 메모 다시 로드
   );
+
+  // chatRooms 변경 시에도 메모 다시 로드
+  useEffect(() => {
+    console.log('MemosScreen: chatRooms changed, reloading memos');
+    loadMemos();
+  }, [chatRooms]);
 
   useEffect(() => {
     let filtered = memos;

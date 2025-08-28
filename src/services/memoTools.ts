@@ -223,6 +223,27 @@ const searchMemos = async (args: any, roomId?: string) => {
     const limit = args.limit || 10;
     filteredMemos = filteredMemos.slice(0, limit);
     
+    // 구조화된 메시지 생성
+    let structuredMessage = `${filteredMemos.length}개의 메모를 찾았습니다.\n\n`;
+    
+    if (filteredMemos.length > 0) {
+      structuredMessage += '📝 찾은 메모들:\n';
+      filteredMemos.forEach((memo: any, index: number) => {
+        const date = new Date(memo.timestamp).toLocaleString('ko-KR', {
+          month: 'short',
+          day: 'numeric', 
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        structuredMessage += `\n${index + 1}. [${date}]\n${memo.content}\n`;
+        if (index < filteredMemos.length - 1) {
+          structuredMessage += '---\n';
+        }
+      });
+    } else {
+      structuredMessage = '검색 조건에 맞는 메모가 없습니다.';
+    }
+    
     return {
       success: true,
       data: filteredMemos.map((memo: any) => ({
@@ -231,7 +252,7 @@ const searchMemos = async (args: any, roomId?: string) => {
         timestamp: memo.timestamp,
         formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
       })),
-      message: `${filteredMemos.length}개의 메모를 찾았습니다.`
+      message: structuredMessage
     };
   } catch (error) {
     return {
@@ -249,11 +270,29 @@ const getMemoStats = async (args: any, roomId?: string) => {
     
     switch (args.type) {
       case 'total_count':
+        const recentForCount = memos
+          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 3);
+        
+        let countMessage = `총 ${memos.length}개의 메모가 있습니다.`;
+        if (recentForCount.length > 0) {
+          countMessage += '\n\n최근 메모 미리보기:';
+          recentForCount.forEach((memo: any, index: number) => {
+            const date = new Date(memo.timestamp).toLocaleString('ko-KR', {
+              month: 'short',
+              day: 'numeric'
+            });
+            const preview = memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : '');
+            countMessage += `\n${index + 1}. [${date}] ${preview}`;
+          });
+        }
+        
         return {
           success: true,
           data: {
             totalCount: memos.length,
-            message: `총 ${memos.length}개의 메모가 있습니다.`
+            recentMemos: recentForCount,
+            message: countMessage
           }
         };
         
@@ -276,17 +315,26 @@ const getMemoStats = async (args: any, roomId?: string) => {
         const recentMemos = memos
           .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
           .slice(0, 5);
+        
+        let activityMessage = `최근 ${recentMemos.length}개의 메모입니다:\n\n`;
+        recentMemos.forEach((memo: any, index: number) => {
+          const date = new Date(memo.timestamp).toLocaleString('ko-KR');
+          activityMessage += `${index + 1}. [${date}]\n${memo.content}\n`;
+          if (index < recentMemos.length - 1) {
+            activityMessage += '\n';
+          }
+        });
           
         return {
           success: true,
           data: {
             recentMemos: recentMemos.map((memo: any) => ({
               id: memo.id,
-              content: memo.content.substring(0, 50) + (memo.content.length > 50 ? '...' : ''),
+              content: memo.content,
               timestamp: memo.timestamp,
               formattedDate: new Date(memo.timestamp).toLocaleString('ko-KR')
             })),
-            message: `최근 ${recentMemos.length}개의 메모입니다.`
+            message: activityMessage
           }
         };
         
@@ -357,6 +405,27 @@ const generateSummary = async (args: any, roomId?: string) => {
     const keyTopics = extractKeyTopics(filteredMemos);
     const summary = createSummaryText(filteredMemos, args.summary_length || 'brief');
     
+    let summaryMessage = `${filteredMemos.length}개 메모의 요약을 생성했습니다.\n\n`;
+    summaryMessage += `📊 ${summary}\n\n`;
+    
+    if (keyTopics.length > 0) {
+      summaryMessage += `🏷️ 주요 키워드: ${keyTopics.join(', ')}\n\n`;
+    }
+    
+    if (filteredMemos.length > 0) {
+      summaryMessage += `📝 주요 메모들:\n`;
+      filteredMemos.slice(0, 5).forEach((memo: any, index: number) => {
+        const date = new Date(memo.timestamp).toLocaleString('ko-KR', { 
+          month: 'short', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit' 
+        });
+        const preview = memo.content.substring(0, 100) + (memo.content.length > 100 ? '...' : '');
+        summaryMessage += `\n${index + 1}. [${date}]\n${preview}\n`;
+      });
+    }
+    
     return {
       success: true,
       data: {
@@ -365,7 +434,7 @@ const generateSummary = async (args: any, roomId?: string) => {
         keyTopics: keyTopics,
         timeRange: getTimeRangeText(args),
         memos: filteredMemos.slice(0, 5).map((memo: any) => ({
-          content: memo.content.substring(0, 100) + (memo.content.length > 100 ? '...' : ''),
+          content: memo.content,
           date: new Date(memo.timestamp).toLocaleString('ko-KR', { 
             month: 'short', 
             day: 'numeric',
@@ -374,7 +443,7 @@ const generateSummary = async (args: any, roomId?: string) => {
           })
         }))
       },
-      message: `${filteredMemos.length}개 메모의 요약을 생성했습니다.`
+      message: summaryMessage
     };
   } catch (error) {
     return {
@@ -430,6 +499,18 @@ const extractTasks = async (args: any, roomId?: string) => {
       });
     });
     
+    let tasksMessage = `${filteredMemos.length}개 메모에서 ${tasks.length}개의 작업을 발견했습니다.`;
+    
+    if (tasks.length > 0) {
+      tasksMessage += '\n\n✅ 발견된 작업들:\n';
+      tasks.forEach((task: any, index: number) => {
+        tasksMessage += `\n${index + 1}. ${task.task}`;
+        tasksMessage += `\n   📅 ${task.date} | 출처: ${task.source}\n`;
+      });
+    } else {
+      tasksMessage = '작업이나 할 일 항목을 찾을 수 없습니다.';
+    }
+    
     return {
       success: true,
       data: {
@@ -438,7 +519,7 @@ const extractTasks = async (args: any, roomId?: string) => {
         totalMemos: filteredMemos.length,
         timeRange: getTimeRangeText(args)
       },
-      message: `${filteredMemos.length}개 메모에서 ${tasks.length}개의 작업을 발견했습니다.`
+      message: tasksMessage
     };
   } catch (error) {
     return {
