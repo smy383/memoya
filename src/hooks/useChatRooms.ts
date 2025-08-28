@@ -120,10 +120,10 @@ export const useChatRooms = () => {
   }, [chatRooms]);
 
   // 채팅방 업데이트
-  const updateRoom = useCallback(async (roomId: string, updates: Partial<ChatRoom>) => {
+  const updateRoom = useCallback(async (roomId: string, updates: Partial<ChatRoom>, updateTimestamp = true) => {
     const updatedRooms = chatRooms.map(room => 
       room.id === roomId 
-        ? { ...room, ...updates, updatedAt: new Date() }
+        ? { ...room, ...updates, ...(updateTimestamp ? { updatedAt: new Date() } : {}) }
         : room
     );
     
@@ -247,8 +247,25 @@ export const useChatRooms = () => {
     const room = chatRooms.find(r => r.id === roomId);
     if (!room) return;
 
-    await updateRoom(roomId, { isFavorite: !room.isFavorite });
-  }, [chatRooms, updateRoom]);
+    const newFavoriteState = !room.isFavorite;
+    
+    // 즉시 UI 업데이트 (Optimistic Update)
+    const updatedRooms = chatRooms.map(r => 
+      r.id === roomId 
+        ? { ...r, isFavorite: newFavoriteState }
+        : r
+    );
+    setChatRooms(updatedRooms);
+    
+    // 비동기로 저장
+    try {
+      await saveChatRooms(updatedRooms);
+    } catch (error) {
+      console.error('Error saving favorite state:', error);
+      // 실패 시 롤백
+      setChatRooms(chatRooms);
+    }
+  }, [chatRooms, saveChatRooms]);
 
   // 채팅방 메타데이터 업데이트 (메시지/메모 개수, 마지막 메시지)
   const updateRoomMetadata = useCallback(async (roomId: string, metadata: {

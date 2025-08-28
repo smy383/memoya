@@ -169,7 +169,9 @@ const MemosScreen: React.FC = () => {
     
     // 카테고리 필터 적용
     if (selectedCategory !== 'all') {
-      if (selectedCategory === 'legacy') {
+      if (selectedCategory === 'favorite') {
+        filtered = filtered.filter(memo => memo.isFavorite);
+      } else if (selectedCategory === 'legacy') {
         filtered = filtered.filter(memo => !memo.roomId);
       } else {
         filtered = filtered.filter(memo => memo.roomId === selectedCategory);
@@ -397,7 +399,7 @@ const MemosScreen: React.FC = () => {
       <View style={styles.memoContent}>
         <View style={styles.memoHeader}>
           <Text style={styles.memoText} numberOfLines={2}>
-            {item.content}
+            {item.content.length > 8 ? `${item.content.substring(0, 8)}...` : item.content}
           </Text>
           <View style={styles.actionButtonsContainer}>
             <TouchableOpacity
@@ -650,6 +652,7 @@ const MemosScreen: React.FC = () => {
             const stats = getCategoryStats();
             const categories = [
               { id: 'all', name: t('memos.categories.all'), count: stats.all },
+              { id: 'favorite', name: '즐겨찾기', count: memos.filter(memo => memo.isFavorite).length },
               ...chatRooms.map(room => ({
                 id: room.id,
                 name: room.title,

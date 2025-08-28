@@ -228,15 +228,24 @@ const ChatRoomsListScreen: React.FC = () => {
       return [];
     }
 
+    // 즐겨찾기 우선으로 정렬
+    const sortedChatRooms = [...chatRooms].sort((a, b) => {
+      // 즐겨찾기가 우선
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      // 즐겨찾기 상태가 같으면 업데이트 시간으로 정렬
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
     if (isPremium) {
-      return chatRooms.map(room => ({ type: 'chatRoom', data: room }));
+      return sortedChatRooms.map(room => ({ type: 'chatRoom', data: room }));
     }
 
     const result: Array<{ type: 'chatRoom' | 'ad'; data?: ChatRoom; adIndex?: number }> = [];
-    chatRooms.forEach((room, index) => {
+    sortedChatRooms.forEach((room, index) => {
       result.push({ type: 'chatRoom', data: room });
       // 3개마다 광고 삽입 (인덱스 2, 5, 8, ... 다음에)
-      if ((index + 1) % 3 === 0 && index < chatRooms.length - 1) {
+      if ((index + 1) % 3 === 0 && index < sortedChatRooms.length - 1) {
         result.push({ type: 'ad', adIndex: Math.floor(index / 3) });
       }
     });

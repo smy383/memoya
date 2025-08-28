@@ -39,35 +39,6 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
     }
   };
 
-  const formatTime = (date: Date): string => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) {
-      return date.toLocaleTimeString(i18n.language === 'ko' ? 'ko-KR' : 
-                                      i18n.language === 'ja' ? 'ja-JP' :
-                                      i18n.language === 'zh' ? 'zh-CN' :
-                                      i18n.language === 'es' ? 'es-ES' :
-                                      i18n.language === 'de' ? 'de-DE' : 'en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } else if (days === 1) {
-      return safeT('common.yesterday', '어제');
-    } else if (days < 7) {
-      return t('common.daysAgo', { days: days.toString() }) || `${days}일 전`;
-    } else {
-      return date.toLocaleDateString(i18n.language === 'ko' ? 'ko-KR' : 
-                                      i18n.language === 'ja' ? 'ja-JP' :
-                                      i18n.language === 'zh' ? 'zh-CN' :
-                                      i18n.language === 'es' ? 'es-ES' :
-                                      i18n.language === 'de' ? 'de-DE' : 'en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
@@ -110,13 +81,6 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
       fontSize: getResponsiveFontSize(14),
       color: theme.colors.textSecondary,
       lineHeight: 18,
-    },
-    time: {
-      fontSize: getResponsiveFontSize(12),
-      color: theme.colors.textSecondary,
-      position: 'absolute',
-      top: 18,
-      right: isEditMode ? 80 : 40,
     },
     titleEditMode: {
       opacity: 0.7,
@@ -183,11 +147,7 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
               <Icon name="trash" size={16} color="#ff4757" />
             </TouchableOpacity>
           </View>
-        ) : (
-          <Text style={styles.time}>
-            {formatTime(chatRoom.updatedAt)}
-          </Text>
-        )}
+        ) : null}
       </View>
 
       {/* 즐겨찾기 버튼 */}
@@ -206,11 +166,11 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
       )}
       
       {/* 현재 방 표시 */}
-      {isCurrentRoom && (
+      {isCurrentRoom && !isEditMode && (
         <View style={{ 
           position: 'absolute', 
           top: 8, 
-          left: 8, 
+          right: 50, 
           backgroundColor: theme.colors.primary,
           borderRadius: 6,
           paddingHorizontal: 8,
