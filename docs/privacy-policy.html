@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="메모야(Memoya) 개인정보처리방침 - 사용자의 개인정보 보호를 위한 정책">
+    <title>메모야(Memoya) 개인정보처리방침</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .last-updated {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #1976d2;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin: 30px 0 20px 0;
+        }
+        
+        h2 {
+            font-size: 1.4rem;
+            color: #34495e;
+            margin: 25px 0 15px 0;
+            padding-left: 10px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        p, li {
+            margin-bottom: 12px;
+        }
+        
+        ul {
+            padding-left: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .highlight-box {
+            background: #f0f7ff;
+            border: 1px solid #bde3ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .privacy-icon {
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 1.2em;
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            margin-top: 30px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .app-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="app-title">📱 메모야 (Memoya)</div>
+            <div class="subtitle">개인정보처리방침</div>
+            <div class="last-updated">
+                <strong>최종 업데이트:</strong> 2025년 8월 28일
+            </div>
+        </div>
+
+        <h1><span class="privacy-icon">🔒</span>개인정보처리방침</h1>
+        
+        <div class="highlight-box">
+            <p><strong>메모야(Memoya)</strong>는 사용자의 개인정보 보호를 최우선으로 생각합니다. 본 방침은 앱에서 수집하는 정보와 그 사용 방법에 대해 설명합니다.</p>
+        </div>
+
+        <h2>1. 수집하는 개인정보</h2>
+        <p>메모야는 다음과 같은 정보를 수집합니다:</p>
+        <ul>
+            <li><strong>메모 내용:</strong> 사용자가 작성한 텍스트 메모</li>
+            <li><strong>AI 채팅 기록:</strong> AI 어시스턴트와의 대화 내용</li>
+            <li><strong>앱 설정 정보:</strong> 언어 설정, 테마(다크/라이트 모드) 선택</li>
+            <li><strong>앱 사용 기록:</strong> 메모 작성 시간, 채팅 사용 패턴</li>
+        </ul>
+
+        <h2>2. 개인정보 저장 방식</h2>
+        <div class="highlight-box">
+            <p><span class="privacy-icon">🏠</span><strong>완전 로컬 저장:</strong> 모든 개인정보는 사용자의 기기에만 저장됩니다.</p>
+            <ul>
+                <li>메모와 채팅 기록은 기기의 AsyncStorage에 저장</li>
+                <li>서버로 전송되지 않음 (AI API 사용 시 제외)</li>
+                <li>앱 삭제 시 모든 데이터가 완전히 제거됨</li>
+            </ul>
+        </div>
+
+        <h2>3. AI 서비스 이용 시 정보 처리</h2>
+        <p>AI 채팅 기능 사용 시:</p>
+        <ul>
+            <li><strong>Google Gemini API</strong>를 통해 대화 내용이 일시적으로 전송됩니다</li>
+            <li>프록시 서버를 통해 API 키를 안전하게 관리합니다</li>
+            <li>대화 종료 후 서버에서 자동으로 삭제됩니다</li>
+            <li>메모 검색 및 요약을 위해 기기 내 메모 데이터를 활용합니다</li>
+        </ul>
+
+        <h2>4. 개인정보 이용 목적</h2>
+        <ul>
+            <li>메모 작성, 수정, 삭제 기능 제공</li>
+            <li>AI 기반 메모 검색 및 요약 서비스 제공</li>
+            <li>사용자 맞춤 설정 저장 (언어, 테마)</li>
+            <li>앱 기능 개선을 위한 사용 패턴 분석</li>
+        </ul>
+
+        <h2>5. 개인정보 보유 및 이용 기간</h2>
+        <ul>
+            <li><strong>메모 및 채팅 데이터:</strong> 사용자가 직접 삭제하거나 앱을 제거할 때까지</li>
+            <li><strong>앱 설정 정보:</strong> 앱 사용 기간 동안</li>
+            <li><strong>AI API 전송 데이터:</strong> 즉시 삭제 (서버에 저장되지 않음)</li>
+        </ul>
+
+        <h2>6. 개인정보의 제3자 제공</h2>
+        <div class="highlight-box">
+            <p><span class="privacy-icon">🚫</span><strong>제3자 제공 없음:</strong> 메모야는 사용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
+            <p><strong>예외:</strong> Google Gemini API 사용 시에만 대화 내용이 일시적으로 전송되며, 이는 서비스 제공을 위한 필수적 처리입니다.</p>
+        </div>
+
+        <h2>7. 사용자의 권리</h2>
+        <p>사용자는 언제든지 다음 권리를 행사할 수 있습니다:</p>
+        <ul>
+            <li><strong>열람권:</strong> 앱 내에서 저장된 모든 메모와 채팅 기록 확인 가능</li>
+            <li><strong>수정·삭제권:</strong> 개별 메모와 채팅 메시지 수정 및 삭제 가능</li>
+            <li><strong>처리정지권:</strong> 앱 삭제를 통해 모든 개인정보 처리 중단 가능</li>
+            <li><strong>데이터 백업/복구:</strong> 파일 내보내기/가져오기 기능 제공</li>
+        </ul>
+
+        <h2>8. 개인정보 보호를 위한 기술적 대책</h2>
+        <ul>
+            <li>로컬 저장소(AsyncStorage) 암호화</li>
+            <li>API 통신 시 HTTPS 보안 연결</li>
+            <li>프록시 서버를 통한 API 키 보안 관리</li>
+            <li>앱 코드 난독화 (ProGuard 적용)</li>
+        </ul>
+
+        <h2>9. 개인정보처리방침의 변경</h2>
+        <p>본 개인정보처리방침은 관련 법령 및 정책 변경에 따라 수정될 수 있으며, 변경 시 앱 업데이트를 통해 공지합니다.</p>
+
+        <h2>10. 문의 및 신고</h2>
+        <div class="contact-info">
+            <p><span class="privacy-icon">📧</span><strong>개인정보 관련 문의:</strong></p>
+            <ul>
+                <li><strong>개발자:</strong> smy383</li>
+                <li><strong>GitHub:</strong> <a href="https://github.com/smy383/memoya">https://github.com/smy383/memoya</a></li>
+                <li><strong>Issues:</strong> <a href="https://github.com/smy383/memoya/issues">GitHub Issues</a>를 통한 문의 가능</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 메모야(Memoya) - 개인정보를 소중히 보호합니다</p>
+            <p>본 개인정보처리방침은 2025년 8월 28일부터 적용됩니다.</p>
+        </div>
+    </div>
+</body>
+</html>
