@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { getResponsiveFontSize } from '../utils/dimensions';
-import { getDownloadBackupFiles } from '../services/backupService';
+// import { selectBackupFile } from '../services/backupService'; // Deprecated
 
 interface BackupFilePickerProps {
   visible: boolean;
@@ -46,7 +46,8 @@ const BackupFilePicker: React.FC<BackupFilePickerProps> = ({
   const loadBackupFiles = async () => {
     try {
       setLoading(true);
-      const files = await getDownloadBackupFiles();
+      // Share API 사용으로 변경되어 직접 파일 목록을 로드하지 않음
+      const files: string[] = [];
       
       const fileInfos: BackupFileInfo[] = files.map(filePath => {
         const fileName = filePath.split('/').pop() || '';

@@ -22,7 +22,7 @@ import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import LanguageSelector from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
-import { createBackup, getBackupInfo, restoreFromInternalBackup, exportBackupToFile, restoreFromFile } from '../services/backupService';
+import { createBackup, getBackupInfo, restoreFromInternalBackup, exportBackupToFile, restoreFromSelectedFile } from '../services/backupService';
 import BackupFilePicker from '../components/BackupFilePicker';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
@@ -186,11 +186,10 @@ const SettingsScreen: React.FC = () => {
     }
 
     try {
-      const exportedFilePath = await exportBackupToFile();
-      const fileName = exportedFilePath.split('/').pop();
+      const fileName = await exportBackupToFile();
       Alert.alert(
         t('common.success'), 
-        `백업이 Downloads 폴더에 저장되었습니다.\n파일명: ${fileName}`
+        `백업 파일이 공유되었습니다.\n파일명: ${fileName}\n\n원하는 앱이나 위치에 저장할 수 있습니다.`
       );
     } catch (error) {
       console.error('Error exporting backup:', error);
@@ -214,7 +213,7 @@ const SettingsScreen: React.FC = () => {
           onPress: async () => {
             try {
               setIsBackupRestoring(true);
-              await restoreFromFile(filePath);
+              throw new Error('외부 파일 복구는 현재 개발 중입니다. 내부 백업에서 복구를 사용해주세요.');
               await loadBackupInfo(); // 백업 정보 새로고침
               
               Alert.alert(

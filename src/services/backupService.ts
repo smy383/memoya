@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
+import Share from 'react-native-share';
 
 export interface BackupData {
   version: string;
@@ -141,7 +142,7 @@ export const restoreFromInternalBackup = async (): Promise<void> => {
 };
 
 /**
- * 백업 파일을 Downloads 폴더로 내보내기
+ * 백업 파일을 공유하여 사용자가 원하는 앱/위치로 저장 (Share API 사용)
  */
 export const exportBackupToFile = async (): Promise<string> => {
   try {
@@ -153,27 +154,62 @@ export const exportBackupToFile = async (): Promise<string> => {
     
     const backupContent = await RNFS.readFile(BACKUP_FILE_PATH, 'utf8');
     
-    // Downloads 폴더에 날짜와 시간이 포함된 파일명으로 저장
+    // 임시 파일로 백업 생성
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
     const exportFileName = `memoya-backup-${timestamp}.json`;
-    const exportFilePath = `${RNFS.DownloadDirectoryPath}/${exportFileName}`;
+    const tempFilePath = `${RNFS.CachesDirectoryPath}/${exportFileName}`;
     
-    console.log('Exporting backup to:', exportFilePath);
+    await RNFS.writeFile(tempFilePath, backupContent, 'utf8');
     
-    await RNFS.writeFile(exportFilePath, backupContent, 'utf8');
+    // Share API를 사용해서 파일 공유
+    const shareOptions = {
+      title: 'Memoya 백업 파일',
+      message: 'Memoya 앱의 백업 파일입니다.',
+      url: `file://${tempFilePath}`,
+      type: 'application/json',
+      filename: exportFileName,
+      failOnCancel: false,
+    };
     
-    // 파일이 실제로 생성되었는지 확인
-    const exportedFileExists = await RNFS.exists(exportFilePath);
-    if (!exportedFileExists) {
-      throw new Error('백업 파일 내보내기에 실패했습니다.');
+    try {
+      const result = await Share.open(shareOptions);
+      console.log('Share result:', result);
+      
+      // 임시 파일 정리
+      setTimeout(async () => {
+        try {
+          const exists = await RNFS.exists(tempFilePath);
+          if (exists) {
+            await RNFS.unlink(tempFilePath);
+          }
+        } catch (cleanupError) {
+          console.log('Cleanup error (non-critical):', cleanupError);
+        }
+      }, 5000); // 5초 후 정리
+      
+      return exportFileName;
+    } catch (shareError) {
+      // 임시 파일 정리
+      try {
+        const exists = await RNFS.exists(tempFilePath);
+        if (exists) {
+          await RNFS.unlink(tempFilePath);
+        }
+      } catch (cleanupError) {
+        console.log('Cleanup error (non-critical):', cleanupError);
+      }
+      
+      if (shareError.message && shareError.message.includes('cancelled')) {
+        throw new Error('백업 내보내기가 취소되었습니다.');
+      }
+      throw new Error('백업 파일 공유 중 오류가 발생했습니다.');
     }
-    
-    console.log('Backup exported to Downloads folder successfully');
-    return exportFilePath;
     
   } catch (error) {
     console.error('Error exporting backup to file:', error);
-    if (error.message.includes('내보낼 백업이 없습니다') || error.message.includes('백업 파일 내보내기에 실패')) {
+    if (error.message.includes('내보낼 백업이 없습니다') || 
+        error.message.includes('백업 내보내기가 취소') ||
+        error.message.includes('백업 파일 공유 중')) {
       throw error;
     }
     throw new Error('백업 파일 내보내기 중 오류가 발생했습니다.');
@@ -206,34 +242,50 @@ export const restoreFromBackup = async (backupData: BackupData): Promise<void> =
 };
 
 /**
- * Downloads 폴더에서 백업 파일 목록 가져오기
+ * 백업 복구는 사용자가 직접 백업 파일을 공유해서 앱으로 가져오는 방식 사용
+ * (Android Intent 또는 iOS Share Extension을 통해)
+ * 현재는 내부 백업만 지원하도록 단순화
  */
-export const getDownloadBackupFiles = async (): Promise<string[]> => {
+export const importBackupFromShare = async (fileUri: string): Promise<void> => {
   try {
-    const downloadPath = RNFS.DownloadDirectoryPath;
-    const files = await RNFS.readDir(downloadPath);
+    const fileExists = await RNFS.exists(fileUri);
     
-    // memoya-backup으로 시작하고 .json으로 끝나는 파일들만 필터링
-    const backupFiles = files
-      .filter(file => 
-        file.name.startsWith('memoya-backup') && 
-        file.name.endsWith('.json') && 
-        file.isFile()
-      )
-      .map(file => file.path)
-      .sort((a, b) => b.localeCompare(a)); // 최신 파일이 먼저 오도록 정렬
+    if (!fileExists) {
+      throw new Error('선택한 백업 파일을 찾을 수 없습니다.');
+    }
     
-    console.log('Found backup files:', backupFiles.length);
-    return backupFiles;
+    const backupContent = await RNFS.readFile(fileUri, 'utf8');
+    const backupData: BackupData = JSON.parse(backupContent);
+    
+    // 백업 데이터 검증
+    if (!backupData.version || !backupData.timestamp || !backupData.data) {
+      throw new Error('올바르지 않은 백업 파일 형식입니다.');
+    }
+    
+    // 백업 데이터를 AsyncStorage로 복구
+    await restoreFromBackup(backupData);
+    
+    console.log('Successfully imported backup from shared file');
     
   } catch (error) {
-    console.error('Error getting download backup files:', error);
-    return [];
+    console.error('Error importing backup from share:', error);
+    if (error.message.includes('선택한 백업 파일') || 
+        error.message.includes('올바르지 않은')) {
+      throw error;
+    }
+    throw new Error('백업 파일 가져오기 중 오류가 발생했습니다.');
   }
 };
 
 /**
- * 파일에서 백업 데이터를 가져와서 복구
+ * 현재는 내부 백업만 지원 - 외부 파일 복구는 추후 구현
+ */
+export const restoreFromSelectedFile = async (): Promise<void> => {
+  throw new Error('외부 파일에서 복구 기능은 현재 개발 중입니다. 내부 백업에서 복구를 사용해주세요.');
+};
+
+/**
+ * 파일에서 백업 데이터를 가져와서 복구 (기존 함수 - 호환성 유지)
  */
 export const restoreFromFile = async (filePath: string): Promise<void> => {
   try {
