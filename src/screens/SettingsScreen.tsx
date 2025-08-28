@@ -8,6 +8,7 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -337,6 +338,14 @@ const SettingsScreen: React.FC = () => {
     });
   };
 
+  const openPrivacyPolicy = () => {
+    const privacyUrl = 'https://smy383.github.io/memoya/docs/privacy-policy.html';
+    Linking.openURL(privacyUrl).catch(err => {
+      console.error('Failed to open privacy policy URL:', err);
+      Alert.alert('오류', '개인정보처리방침을 열 수 없습니다.');
+    });
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -658,9 +667,20 @@ const SettingsScreen: React.FC = () => {
 
         <Text style={styles.sectionTitle}>{safeT('settings.about', '정보')}</Text>
         <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={openPrivacyPolicy}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingLabelWithIcon}>
+              <Icon name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.settingLabel}>개인정보처리방침</Text>
+            </View>
+            <Icon name="open-outline" size={20} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
             <Text style={styles.settingLabel}>{safeT('settings.version', '버전')}</Text>
-            <Text style={styles.settingValue}>1.0.0</Text>
+            <Text style={styles.settingValue}>1.0.3</Text>
           </View>
         </View>
         </View>
