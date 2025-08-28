@@ -22,7 +22,7 @@ const TabsWithAd: React.FC = () => {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={({ route, navigation }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: string;
 
@@ -40,28 +40,68 @@ const TabsWithAd: React.FC = () => {
               iconName = 'help-outline';
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return (
+            <View style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: focused ? 32 : 28,
+              height: focused ? 32 : 28,
+              borderRadius: focused ? 16 : 14,
+              backgroundColor: focused ? theme.colors.primary + '15' : 'transparent',
+            }}>
+              <Icon 
+                name={iconName} 
+                size={focused ? size + 2 : size} 
+                color={focused ? theme.colors.primary : color} 
+              />
+            </View>
+          );
         },
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.colors.background,
+          borderTopWidth: 1,
           borderTopColor: theme.colors.border,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 60,
+          paddingBottom: 10,
+          paddingTop: 10,
+          height: 65,
+          // 그림자 효과 추가
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginBottom: 2,
         },
         headerStyle: {
-          backgroundColor: theme.colors.surface,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: theme.colors.border,
+          backgroundColor: theme.colors.background,
+          // 그림자 효과 추가
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+          borderBottomWidth: 0,
         },
         headerTitleStyle: {
           color: theme.colors.text,
-          fontSize: 18,
-          fontWeight: '600',
+          fontSize: 20,
+          fontWeight: '700',
+          letterSpacing: -0.5,
         },
         headerTitleAlign: 'center',
       })}

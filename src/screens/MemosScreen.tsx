@@ -386,57 +386,61 @@ const MemosScreen: React.FC = () => {
   };
 
   const renderMemoItem = ({ item }: { item: ExtendedMemo }) => (
-    <View style={styles.memoItem}>
-      <TouchableOpacity
-        style={styles.memoMainContent}
-        onPress={() => {
-          console.log('MemosScreen: Memo item pressed:', item.id);
-          openMemoModal(item);
-        }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.memoTitleRow}>
-          <Text style={styles.memoTitle} numberOfLines={1}>
-            {item.title || item.content.substring(0, 10)}
+    <TouchableOpacity
+      style={styles.memoItem}
+      onPress={() => {
+        console.log('MemosScreen: Memo item pressed:', item.id);
+        openMemoModal(item);
+      }}
+      activeOpacity={0.7}
+    >
+      <View style={styles.memoContent}>
+        <View style={styles.memoHeader}>
+          <Text style={styles.memoText} numberOfLines={2}>
+            {item.content}
           </Text>
-          <View style={styles.categoryTag}>
-            <Text style={styles.categoryText}>
-              {getCategoryDisplayName(item)}
-            </Text>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => toggleFavorite(item.id)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon
+                name={item.isFavorite ? "heart" : "heart-outline"}
+                size={16}
+                color={item.isFavorite ? "#FF6B6B" : theme.colors.textSecondary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => copyToClipboard(item.content)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon name="copy-outline" size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => confirmDelete(item.id)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon name="trash-outline" size={16} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.memoDate}>
-          {formatDate(item.timestamp)}
-        </Text>
-      </TouchableOpacity>
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => toggleFavorite(item.id)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon
-            name={item.isFavorite ? "heart" : "heart-outline"}
-            size={18}
-            color={item.isFavorite ? "#FF6B6B" : theme.colors.textSecondary}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => copyToClipboard(item.content)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="copy-outline" size={18} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => confirmDelete(item.id)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="trash-outline" size={18} color={theme.colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.memoFooter}>
+          {item.roomId && (
+            <View style={styles.roomTag}>
+              <Text style={styles.roomText} numberOfLines={1}>
+                {getCategoryDisplayName(item)}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.memoDate}>
+            {formatDate(item.timestamp)}
+          </Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const styles = StyleSheet.create({
@@ -461,46 +465,62 @@ const MemosScreen: React.FC = () => {
       flex: 1,
     },
     memoItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.background,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginVertical: 4,
+      padding: 12,
+      // 참고 디자인의 깔끔한 그림자
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 6,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: theme.colors.border + '30',
     },
-    memoMainContent: {
+    memoContent: {
       flex: 1,
-      marginRight: theme.spacing.sm,
     },
-    memoTitleRow: {
+    memoHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 6,
+    },
+    memoText: {
+      fontSize: getResponsiveFontSize(15),
+      color: theme.colors.text,
+      fontWeight: '400',
+      flex: 1,
+      lineHeight: 20,
+      marginRight: 8,
+    },
+    memoFooter: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: theme.spacing.xs,
+      marginTop: 6,
     },
-    memoTitle: {
-      fontSize: getResponsiveFontSize(16),
-      color: theme.colors.text,
-      fontWeight: '500',
-      flex: 1,
-      marginRight: theme.spacing.xs,
-    },
-    categoryTag: {
-      backgroundColor: theme.colors.primary + '20',
-      paddingHorizontal: theme.spacing.xs,
+    roomTag: {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 6,
       paddingVertical: 2,
-      borderRadius: 12,
-      minWidth: 40,
+      borderRadius: 8,
+      maxWidth: 100,
     },
-    categoryText: {
-      fontSize: getResponsiveFontSize(11),
-      color: theme.colors.primary,
-      fontWeight: '600',
-      textAlign: 'center',
+    roomText: {
+      fontSize: getResponsiveFontSize(10),
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
     },
     memoDate: {
-      fontSize: getResponsiveFontSize(12),
+      fontSize: getResponsiveFontSize(11),
       color: theme.colors.textSecondary,
+      fontWeight: '400',
     },
     emptyContainer: {
       flex: 1,
@@ -516,10 +536,11 @@ const MemosScreen: React.FC = () => {
     actionButtonsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: theme.spacing.xs,
+      gap: 4,
+      marginLeft: 8,
     },
     actionButton: {
-      padding: theme.spacing.xs,
+      padding: 4,
       borderRadius: 4,
     },
     modalContainer: {

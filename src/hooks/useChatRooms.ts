@@ -242,6 +242,14 @@ export const useChatRooms = () => {
     }
   }, [chatRooms, calculateRoomMetadata]);
 
+  // 즐겨찾기 토글
+  const toggleFavorite = useCallback(async (roomId: string) => {
+    const room = chatRooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    await updateRoom(roomId, { isFavorite: !room.isFavorite });
+  }, [chatRooms, updateRoom]);
+
   // 채팅방 메타데이터 업데이트 (메시지/메모 개수, 마지막 메시지)
   const updateRoomMetadata = useCallback(async (roomId: string, metadata: {
     messageCount?: number;
@@ -264,6 +272,7 @@ export const useChatRooms = () => {
     deleteRoom,
     setCurrentRoom,
     getCurrentRoom,
+    toggleFavorite,
     updateRoomMetadata,
     calculateRoomMetadata,
     refreshAllRoomMetadata,

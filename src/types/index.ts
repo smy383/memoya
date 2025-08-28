@@ -26,6 +26,7 @@ export interface ChatRoom {
   };
   messageCount: number;
   memoCount: number;
+  isFavorite?: boolean;
 }
 
 export interface ThemeColors {

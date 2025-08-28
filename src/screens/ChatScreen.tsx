@@ -451,6 +451,137 @@ const ChatScreen: React.FC = () => {
     </View>
   );
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    keyboardAvoidingView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: theme.colors.background,
+      // 그림자 효과 추가
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      borderBottomWidth: 0,
+    },
+    backButton: {
+      padding: 12,
+      marginRight: 12,
+      marginLeft: -4,
+      borderRadius: 24,
+      backgroundColor: 'transparent',
+    },
+    headerTitleContainer: {
+      flex: 1,
+    },
+    headerTitle: {
+      fontSize: getResponsiveFontSize(20),
+      fontWeight: '700',
+      color: theme.colors.text,
+      letterSpacing: -0.5,
+    },
+    messagesList: {
+      flex: 1,
+    },
+    messagesContainer: {
+      paddingVertical: 8,
+    },
+    dateSeparatorContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 16,
+      paddingHorizontal: 16,
+    },
+    dateSeparatorLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.colors.border,
+    },
+    dateSeparatorText: {
+      marginHorizontal: 16,
+      fontSize: getResponsiveFontSize(12),
+      color: theme.colors.textSecondary,
+      fontWeight: '500',
+    },
+    processingContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    processingBubble: {
+      alignSelf: 'flex-start',
+      backgroundColor: theme.colors.surface,
+      borderRadius: 18,
+      borderBottomLeftRadius: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      maxWidth: '80%',
+    },
+    processingContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    processingText: {
+      marginLeft: 8,
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
+    },
+    inputContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      backgroundColor: theme.colors.background,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      fontSize: getResponsiveFontSize(16),
+      color: theme.colors.text,
+      backgroundColor: theme.colors.background,
+      maxHeight: 100,
+      marginBottom: 8,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    button: {
+      flex: 1,
+      borderRadius: 20,
+      paddingVertical: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    recordButton: {
+      backgroundColor: '#4CAF50',
+    },
+    chatButton: {
+      backgroundColor: theme.colors.primary,
+    },
+    disabledButton: {
+      opacity: 0.5,
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      fontSize: getResponsiveFontSize(16),
+      fontWeight: '600',
+    },
+  });
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
@@ -475,123 +606,5 @@ const ChatScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  headerTitleContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: getResponsiveFontSize(18),
-    fontWeight: '600',
-    color: '#333',
-  },
-  messagesList: {
-    flex: 1,
-  },
-  messagesContainer: {
-    paddingVertical: 8,
-  },
-  dateSeparatorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-    paddingHorizontal: 16,
-  },
-  dateSeparatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E0E0E0',
-  },
-  dateSeparatorText: {
-    marginHorizontal: 16,
-    fontSize: getResponsiveFontSize(12),
-    color: '#666',
-    fontWeight: '500',
-  },
-  processingContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  processingBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 18,
-    borderBottomLeftRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    maxWidth: '80%',
-  },
-  processingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  processingText: {
-    marginLeft: 8,
-    fontSize: getResponsiveFontSize(14),
-    color: '#666',
-  },
-  inputContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: getResponsiveFontSize(16),
-    color: '#333',
-    backgroundColor: '#FFFFFF',
-    maxHeight: 100,
-    marginBottom: 8,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 20,
-    paddingVertical: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recordButton: {
-    backgroundColor: '#4CAF50',
-  },
-  chatButton: {
-    backgroundColor: '#2196F3',
-  },
-  disabledButton: {
-    backgroundColor: '#CCCCCC',
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: getResponsiveFontSize(16),
-    fontWeight: '600',
-  },
-});
 
 export default ChatScreen;

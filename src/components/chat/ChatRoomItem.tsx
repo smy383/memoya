@@ -14,6 +14,7 @@ interface ChatRoomItemProps {
   isEditMode?: boolean;
   onEdit?: (roomId: string) => void;
   onDelete?: (roomId: string) => void;
+  onToggleFavorite?: (roomId: string) => void;
 }
 
 const ChatRoomItem: React.FC<ChatRoomItemProps> = ({ 
@@ -23,7 +24,8 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
   isCurrentRoom = false,
   isEditMode = false,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleFavorite
 }) => {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
@@ -69,59 +71,52 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
-      backgroundColor: isCurrentRoom ? theme.colors.primary + '20' : theme.colors.surface,
+      backgroundColor: isCurrentRoom ? theme.colors.primary + '08' : theme.colors.surface,
       borderRadius: 12,
-      marginHorizontal: theme.spacing?.md || 16,
-      marginVertical: theme.spacing?.xs || 4,
-      padding: theme.spacing?.md || 16,
-      borderWidth: isCurrentRoom ? 2 : 1,
-      borderColor: isCurrentRoom ? theme.colors.primary : theme.colors.border,
+      marginHorizontal: 16,
+      marginVertical: 6,
+      padding: 18,
+      // 선택되지 않은 채팅방만 그림자 적용
+      shadowColor: isCurrentRoom ? 'transparent' : '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: isCurrentRoom ? 0 : 0.05,
+      shadowRadius: isCurrentRoom ? 0 : 6,
+      elevation: isCurrentRoom ? 0 : 2,
+      borderWidth: 0,
     },
     header: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 8,
+    },
+    titleRow: {
+      flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: theme.spacing?.xs || 4,
+      flex: 1,
+      marginRight: 12,
     },
     title: {
       fontSize: getResponsiveFontSize(16),
       fontWeight: '600',
-      color: isCurrentRoom ? theme.colors.primary : theme.colors.text,
+      color: theme.colors.text,
       flex: 1,
-      marginRight: theme.spacing?.sm || 8,
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: getResponsiveFontSize(14),
+      color: theme.colors.textSecondary,
+      lineHeight: 18,
     },
     time: {
       fontSize: getResponsiveFontSize(12),
       color: theme.colors.textSecondary,
-    },
-    lastMessage: {
-      fontSize: getResponsiveFontSize(14),
-      color: theme.colors.textSecondary,
-      marginBottom: theme.spacing?.xs || 4,
-      lineHeight: 18,
-    },
-    footer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    counts: {
-      flexDirection: 'row',
-      gap: theme.spacing?.sm || 8,
-    },
-    countItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    },
-    countText: {
-      fontSize: getResponsiveFontSize(12),
-      color: theme.colors.textSecondary,
-    },
-    currentRoomIndicator: {
-      fontSize: getResponsiveFontSize(12),
-      color: theme.colors.primary,
-      fontWeight: '500',
+      position: 'absolute',
+      top: 18,
+      right: isEditMode ? 80 : 40,
     },
     titleEditMode: {
       opacity: 0.7,
@@ -129,7 +124,14 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
     editActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: theme.spacing?.sm || 12,
+      gap: 8,
+    },
+    favoriteButton: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      padding: 8,
+      borderRadius: 20,
     },
     actionButton: {
       padding: theme.spacing?.xs || 8,
@@ -154,9 +156,16 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
       disabled={isEditMode}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, isEditMode && styles.titleEditMode]} numberOfLines={1}>
-          {chatRoom.title}
-        </Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.title, isEditMode && styles.titleEditMode]} numberOfLines={1}>
+              {chatRoom.title}
+            </Text>
+            <Text style={styles.subtitle}>
+              {chatRoom.messageCount}개 메시지, {chatRoom.memoCount}개 메모
+            </Text>
+          </View>
+        </View>
         {isEditMode ? (
           <View style={styles.editActions}>
             <TouchableOpacity
@@ -181,34 +190,41 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
         )}
       </View>
 
-      {chatRoom.lastMessage && (
-        <Text style={styles.lastMessage} numberOfLines={2}>
-          {chatRoom.lastMessage.type === 'record' ? '📝 ' : 
-           chatRoom.lastMessage.type === 'ai' ? '🤖 ' : ''}
-          {chatRoom.lastMessage.content}
-        </Text>
+      {/* 즐겨찾기 버튼 */}
+      {!isEditMode && (
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => onToggleFavorite?.(chatRoom.id)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon 
+            name={chatRoom.isFavorite ? "star" : "star-outline"} 
+            size={18} 
+            color={chatRoom.isFavorite ? "#FFD700" : theme.colors.textSecondary} 
+          />
+        </TouchableOpacity>
       )}
-
-      <View style={styles.footer}>
-        <View style={styles.counts}>
-          <View style={styles.countItem}>
-            <Text style={styles.countText}>
-              💬 {chatRoom.messageCount}
-            </Text>
-          </View>
-          <View style={styles.countItem}>
-            <Text style={styles.countText}>
-              📝 {chatRoom.memoCount}
-            </Text>
-          </View>
-        </View>
-        
-        {isCurrentRoom && (
-          <Text style={styles.currentRoomIndicator}>
+      
+      {/* 현재 방 표시 */}
+      {isCurrentRoom && (
+        <View style={{ 
+          position: 'absolute', 
+          top: 8, 
+          left: 8, 
+          backgroundColor: theme.colors.primary,
+          borderRadius: 6,
+          paddingHorizontal: 8,
+          paddingVertical: 2
+        }}>
+          <Text style={{
+            fontSize: getResponsiveFontSize(10),
+            color: '#FFFFFF',
+            fontWeight: '600'
+          }}>
             {safeT('chatRooms.current', '현재')}
           </Text>
-        )}
-      </View>
+        </View>
+      )}
     </TouchableOpacity>
   );
 };

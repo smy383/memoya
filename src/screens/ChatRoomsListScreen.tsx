@@ -50,6 +50,7 @@ const ChatRoomsListScreen: React.FC = () => {
     updateRoom,
     deleteRoom,
     setCurrentRoom,
+    toggleFavorite,
     refreshAllRoomMetadata,
     refetch,
   } = useChatRooms();
@@ -257,6 +258,7 @@ const ChatRoomsListScreen: React.FC = () => {
           isEditMode={isEditMode}
           onEdit={handleEditRoom}
           onDelete={handleDeleteRoom}
+          onToggleFavorite={toggleFavorite}
         />
       );
     }
@@ -281,11 +283,19 @@ const ChatRoomsListScreen: React.FC = () => {
       backgroundColor: theme.colors.background,
     },
     header: {
-      paddingHorizontal: theme.spacing?.md || 16,
-      paddingVertical: theme.spacing?.sm || 8,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: theme.colors.background,
+      // 그림자 효과 추가
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      borderBottomWidth: 0,
     },
     headerContent: {
       flexDirection: 'row',
@@ -293,8 +303,8 @@ const ChatRoomsListScreen: React.FC = () => {
       justifyContent: 'space-between',
     },
     headerTitle: {
-      fontSize: getResponsiveFontSize(24),
-      fontWeight: '700',
+      fontSize: getResponsiveFontSize(18),
+      fontWeight: '600',
       color: theme.colors.text,
       flex: 1,
       textAlign: 'center',
@@ -314,13 +324,15 @@ const ChatRoomsListScreen: React.FC = () => {
     },
     listContainer: {
       flex: 1,
-      paddingVertical: theme.spacing?.sm || 8,
+      paddingTop: 12,
+      paddingBottom: 80, // FAB 공간 확보
     },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: theme.spacing?.xl || 32,
+      paddingHorizontal: 32,
+      paddingVertical: 60,
     },
     emptyTitle: {
       fontSize: getResponsiveFontSize(18),
