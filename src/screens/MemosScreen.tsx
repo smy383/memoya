@@ -564,13 +564,18 @@ const MemosScreen: React.FC = () => {
       alignItems: 'center',
       paddingHorizontal: theme.spacing.md,
       paddingBottom: theme.spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.primary,
+      marginHorizontal: -theme.spacing.sm,
+      marginTop: -theme.spacing.sm,
+      paddingTop: theme.spacing.md,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      borderBottomWidth: 0,
     },
     modalTitle: {
       fontSize: getResponsiveFontSize(18),
       fontWeight: '600',
-      color: theme.colors.text,
+      color: '#FFFFFF',
     },
     modalBody: {
       flex: 1,
@@ -721,7 +726,7 @@ const MemosScreen: React.FC = () => {
                 style={styles.modalButton}
                 onPress={closeMemoModal}
               >
-                <Text style={[styles.modalButtonText, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
                   {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
@@ -730,7 +735,7 @@ const MemosScreen: React.FC = () => {
                 style={styles.modalButton}
                 onPress={saveMemo}
               >
-                <Text style={[styles.modalButtonText, { color: theme.colors.primary }]}>
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
                   {t('common.save')}
                 </Text>
               </TouchableOpacity>
