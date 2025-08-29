@@ -22,8 +22,7 @@ import { RootStackParamList } from '../types';
 import { getResponsiveFontSize, isTablet } from '../utils/dimensions';
 import LanguageSelector from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
-import { createBackup, getBackupInfo, restoreFromInternalBackup, exportBackupToFile, restoreFromSelectedFile } from '../services/backupService';
-import BackupFilePicker from '../components/BackupFilePicker';
+import { createBackup, getBackupInfo, restoreFromInternalBackup, exportBackupToFile, pickAndRestoreBackupFile } from '../services/backupService';
 
 type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -36,7 +35,6 @@ const SettingsScreen: React.FC = () => {
   const [isBackupCreating, setIsBackupCreating] = useState(false);
   const [isBackupRestoring, setIsBackupRestoring] = useState(false);
   const [backupInfo, setBackupInfo] = useState<{exists: boolean; timestamp?: string; dataCount?: number; chatRoomsCount?: number; memosCount?: number} | null>(null);
-  const [isFilePickerVisible, setIsFilePickerVisible] = useState(false);
 
   // i18n이 아직 로드되지 않은 경우 기본값 사용
   const safeT = (key: string, defaultValue?: string) => {
@@ -60,59 +58,6 @@ const SettingsScreen: React.FC = () => {
     setIsLanguageSelectorVisible(false);
   };
 
-  const checkStoredData = async () => {
-    try {
-      const allKeys = await AsyncStorage.getAllKeys();
-      const allData = await AsyncStorage.multiGet(allKeys);
-
-      let dataInfo = t('settings.dataManagement.storedDataPrefix') + '\n\n';
-      allData.forEach(([key, value]) => {
-        if (value) {
-          try {
-            const parsed = JSON.parse(value);
-            if (Array.isArray(parsed)) {
-              dataInfo += `${key}: ${parsed.length}${t('settings.dataManagement.itemsCount')}\n`;
-              if (key === 'chatRooms') {
-                parsed.forEach((room: any, index: number) => {
-                  dataInfo += `  ${index + 1}. ${room.title} (${room.id})\n`;
-                });
-              }
-            } else if (typeof parsed === 'object') {
-              dataInfo += `${key}: ${t('settings.dataManagement.objectType')}\n`;
-            } else {
-              dataInfo += `${key}: ${value}\n`;
-            }
-          } catch {
-            dataInfo += `${key}: ${value}\n`;
-          }
-        } else {
-          dataInfo += `${key}: null\n`;
-        }
-      });
-
-      Alert.alert(t('settings.dataManagement.storedDataTitle'), dataInfo);
-    } catch (error) {
-      Alert.alert(t('common.error'), t('settings.dataManagement.checkDataError'));
-    }
-  };
-
-  const testSaveRoom = async () => {
-    try {
-      const testRoom = {
-        id: 'test-room-' + Date.now(),
-        title: t('settings.dataManagement.testRoomTitle'),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        messageCount: 0,
-        memoCount: 0,
-      };
-
-      await AsyncStorage.setItem('chatRooms', JSON.stringify([testRoom]));
-      Alert.alert(t('common.success'), t('settings.dataManagement.testRoomSuccess'));
-    } catch (error) {
-      Alert.alert(t('common.error'), t('settings.dataManagement.testRoomError'));
-    }
-  };
 
   // 백업 정보 로드
   const loadBackupInfo = async () => {
@@ -198,32 +143,91 @@ const SettingsScreen: React.FC = () => {
   };
 
   const handleImportBackup = () => {
-    setIsFilePickerVisible(true);
+    Alert.alert(
+      'JSON 백업 파일 가져오기',
+      '어떤 방식으로 백업을 가져오시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '파일 선택',
+          onPress: handleFilePickerImport
+        },
+        {
+          text: '텍스트 입력',
+          onPress: handleTextImport
+        }
+      ]
+    );
   };
 
-  const handleFileSelected = async (filePath: string) => {
-    Alert.alert(
-      '백업 파일에서 복구',
-      `선택한 파일에서 데이터를 복구하시겠습니까?\n\n현재 모든 데이터가 삭제되고 백업 데이터로 대체됩니다.`,
+  const handleFilePickerImport = async () => {
+    try {
+      setIsBackupRestoring(true);
+      await pickAndRestoreBackupFile();
+      await loadBackupInfo();
+      
+      Alert.alert(
+        '복구 완료',
+        '백업 파일이 성공적으로 복구되었습니다.\n앱을 재시작해주세요.',
+        [{ text: '확인' }]
+      );
+    } catch (error) {
+      console.error('Error importing backup from file:', error);
+      Alert.alert('오류', error.message || '백업 파일 복구 중 오류가 발생했습니다.');
+    } finally {
+      setIsBackupRestoring(false);
+    }
+  };
+
+  const handleTextImport = () => {
+    Alert.prompt(
+      '백업 텍스트 입력',
+      '백업 파일의 JSON 내용을 붙여넣어 주세요:',
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { text: '취소', style: 'cancel' },
         {
-          text: t('common.confirm'),
+          text: '복구',
+          style: 'destructive',
+          onPress: (backupText) => {
+            if (!backupText || backupText.trim() === '') {
+              Alert.alert('오류', '백업 데이터가 입력되지 않았습니다.');
+              return;
+            }
+            handleBackupTextImport(backupText.trim());
+          }
+        }
+      ],
+      'plain-text'
+    );
+  };
+
+  const handleBackupTextImport = async (backupText: string) => {
+    Alert.alert(
+      '백업 데이터에서 복구',
+      `입력한 백업 데이터에서 복구하시겠습니까?\n\n현재 모든 데이터가 삭제되고 백업 데이터로 대체됩니다.`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '복구',
           style: 'destructive',
           onPress: async () => {
             try {
               setIsBackupRestoring(true);
-              throw new Error('외부 파일 복구는 현재 개발 중입니다. 내부 백업에서 복구를 사용해주세요.');
+              
+              // 백업 텍스트에서 복구
+              const { restoreFromBackupText } = await import('../services/backupService');
+              await restoreFromBackupText(backupText);
+              
               await loadBackupInfo(); // 백업 정보 새로고침
               
               Alert.alert(
-                t('common.success'),
-                '백업 파일이 성공적으로 복구되었습니다.',
-                [{ text: t('common.confirm') }]
+                '복구 완료',
+                '백업 데이터가 성공적으로 복구되었습니다.\n앱을 재시작해주세요.',
+                [{ text: '확인' }]
               );
             } catch (error) {
-              console.error('Error importing backup from file:', error);
-              Alert.alert(t('common.error'), '백업 파일 복구 중 오류가 발생했습니다.');
+              console.error('Error importing backup from text:', error);
+              Alert.alert('오류', error.message || '백업 데이터 복구 중 오류가 발생했습니다.');
             } finally {
               setIsBackupRestoring(false);
             }
@@ -232,6 +236,7 @@ const SettingsScreen: React.FC = () => {
       ]
     );
   };
+
 
 
   const resetAllData = () => {
@@ -248,8 +253,17 @@ const SettingsScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 모든 AsyncStorage 데이터 삭제
+              // 백업 데이터 먼저 보존
+              const backupData = await AsyncStorage.getItem('internal_backup_data');
+              
+              // 모든 데이터 삭제
               await AsyncStorage.clear();
+              
+              // 백업 데이터 복원
+              if (backupData) {
+                await AsyncStorage.setItem('internal_backup_data', backupData);
+              }
+              
               Alert.alert(
                 t('settings.dataManagement.resetComplete'),
                 t('settings.dataManagement.resetCompleteMessage'),
@@ -555,26 +569,6 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>{t('settings.dataManagementTitle')}</Text>
         <View style={styles.section}>
           <TouchableOpacity
-            style={styles.settingItem}
-            onPress={checkStoredData}
-          >
-            <View style={styles.settingLabelWithIcon}>
-              <Icon name="information-circle-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>{t('settings.dataManagement.checkStoredData')}</Text>
-            </View>
-            <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.settingItem}
-            onPress={testSaveRoom}
-          >
-            <View style={styles.settingLabelWithIcon}>
-              <Icon name="flask-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>{t('settings.dataManagement.saveTestRoom')}</Text>
-            </View>
-            <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.settingItem, styles.lastSettingItem]}
             onPress={resetAllData}
           >
@@ -642,7 +636,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.settingLabelWithIcon}>
               <Icon name="share-outline" size={20} color={backupInfo?.exists ? theme.colors.primary : theme.colors.textSecondary} />
               <Text style={[styles.settingLabel, { color: backupInfo?.exists ? theme.colors.text : theme.colors.textSecondary }]}>
-                백업 내보내기
+                JSON 파일로 내보내기
               </Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={backupInfo?.exists ? theme.colors.textSecondary : '#ccc'} />
@@ -653,8 +647,8 @@ const SettingsScreen: React.FC = () => {
             disabled={isBackupRestoring}
           >
             <View style={styles.settingLabelWithIcon}>
-              <Icon name="folder-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>파일에서 가져오기</Text>
+              <Icon name="document-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.settingLabel}>JSON 파일에서 가져오기</Text>
             </View>
             {isBackupRestoring ? (
               <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -679,7 +673,7 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
             <Text style={styles.settingLabel}>{safeT('settings.version', '버전')}</Text>
-            <Text style={styles.settingValue}>1.0.3</Text>
+            <Text style={styles.settingValue}>1.0.4</Text>
           </View>
         </View>
         </View>
@@ -690,11 +684,6 @@ const SettingsScreen: React.FC = () => {
         onClose={closeLanguageSelector}
       />
       
-      <BackupFilePicker
-        visible={isFilePickerVisible}
-        onClose={() => setIsFilePickerVisible(false)}
-        onFileSelect={handleFileSelected}
-      />
     </SafeAreaView>
   );
 };
