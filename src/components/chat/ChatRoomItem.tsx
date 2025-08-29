@@ -42,7 +42,7 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
 
   const styles = useMemo(() => StyleSheet.create({
     container: {
-      backgroundColor: isCurrentRoom ? theme.colors.primary + '08' : theme.colors.surface,
+      backgroundColor: isCurrentRoom ? theme.colors.primary + '15' : '#E5E5E7',
       borderRadius: 12,
       marginHorizontal: 16,
       marginVertical: 6,
@@ -113,7 +113,7 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: isCurrentRoom ? theme.colors.primary + '15' : '#E5E5E7' }]}
       onPress={() => onPress(chatRoom.id)}
       onLongPress={isEditMode ? undefined : () => onLongPress(chatRoom.id)}
       activeOpacity={0.7}

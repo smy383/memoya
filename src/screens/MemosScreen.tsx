@@ -467,7 +467,7 @@ const MemosScreen: React.FC = () => {
       flex: 1,
     },
     memoItem: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.surface,
       borderRadius: 12,
       marginHorizontal: 16,
       marginVertical: 4,

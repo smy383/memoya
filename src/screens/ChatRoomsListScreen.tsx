@@ -72,7 +72,7 @@ const ChatRoomsListScreen: React.FC = () => {
       if (chatRooms && chatRooms.length > 0) {
         refreshAllRoomMetadata();
       }
-    }, [refreshAllRoomMetadata, chatRooms?.length])
+    }, [refreshAllRoomMetadata])
   );
 
   const handleRoomPress = async (roomId: string) => {

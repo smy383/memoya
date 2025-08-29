@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StatusBar, View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import mobileAds from 'react-native-google-mobile-ads';
@@ -25,19 +25,54 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    initI18n();
+    let isMounted = true;
     
-    // AdMob 초기화
-    mobileAds()
-      .initialize()
-      .then(adapterStatuses => {
-        console.log('AdMob initialized successfully:', adapterStatuses);
-      })
-      .catch(error => {
-        console.error('AdMob initialization failed:', error);
-      });
+    const initializeApp = async () => {
+      try {
+        // i18n 초기화 (순차적으로)
+        await initI18n();
+        console.log('i18n initialized successfully');
+        
+        // AdMob 초기화 (실패해도 앱이 크래시되지 않도록)
+        try {
+          const adapterStatuses = await mobileAds().initialize();
+          console.log('AdMob initialized successfully:', adapterStatuses);
+        } catch (adMobError) {
+          console.error('AdMob initialization failed (non-critical):', adMobError);
+        }
+        
+        if (isMounted) {
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('App initialization failed:', error);
+        // 초기화 실패해도 앱은 계속 실행
+        if (isMounted) {
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    initializeApp();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // 초기화 완료 전까지 로딩 화면 표시
+  if (!isInitialized) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+          <Text style={{ fontSize: 18, color: '#000000' }}>메모야</Text>
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
