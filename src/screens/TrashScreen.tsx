@@ -86,6 +86,43 @@ const TrashScreen: React.FC = () => {
     }
   };
 
+  const emptyAllTrash = async () => {
+    try {
+      // 모든 AsyncStorage 키를 가져와서 trashedMemos로 시작하는 키들 삭제
+      const allKeys = await AsyncStorage.getAllKeys();
+      const trashedKeys = allKeys.filter(key => key.startsWith('trashedMemos'));
+
+      // 모든 휴지통 키 삭제
+      await Promise.all(trashedKeys.map(key => AsyncStorage.removeItem(key)));
+      
+      console.log('TrashScreen: Emptied all trash keys:', trashedKeys);
+      
+      // 상태 업데이트
+      setTrashedMemos([]);
+    } catch (error) {
+      console.error('Error emptying trash:', error);
+      Alert.alert('오류', '휴지통 비우기 중 오류가 발생했습니다.');
+    }
+  };
+
+  const confirmEmptyAllTrash = () => {
+    Alert.alert(
+      '⚠️ 휴지통 전체 비우기',
+      `모든 메모를 영구적으로 삭제하시겠습니까?\n\n🚨 주의사항:\n• 휴지통의 모든 메모가 완전히 삭제됩니다\n• 삭제된 메모는 절대로 복구할 수 없습니다\n\n총 ${trashedMemos.length}개의 메모가 삭제됩니다.`,
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '전체 삭제',
+          style: 'destructive',
+          onPress: emptyAllTrash,
+        },
+      ]
+    );
+  };
+
   const restoreMemo = async (id: string) => {
     try {
       const memoToRestore = trashedMemos.find(memo => memo.id === id);
@@ -319,7 +356,13 @@ const TrashScreen: React.FC = () => {
           <Icon name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('trash.title')}</Text>
-        <View style={{ width: 24 }} />
+        {trashedMemos.length > 0 ? (
+          <TouchableOpacity onPress={confirmEmptyAllTrash}>
+            <Icon name="trash" size={24} color="#FF6B6B" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
       
       {trashedMemos.length > 0 ? (
