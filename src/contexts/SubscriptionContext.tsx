@@ -32,10 +32,10 @@ const STORAGE_KEYS = {
   PURCHASE_TOKEN: 'purchase_token',
 } as const;
 
-// RevenueCat API 키들 - 실제 값으로 교체 필요
+// RevenueCat API 키들
 const REVENUECAT_KEYS = {
   ios: 'appl_YOUR_IOS_API_KEY', 
-  android: 'goog_YOUR_ANDROID_API_KEY'
+  android: 'goog_POwgEGpLFCiaDaAtCdnEjMTCfVE'
 };
 
 // 구독 상품 식별자 - RevenueCat에서 설정한 entitlement identifier

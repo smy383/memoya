@@ -303,22 +303,6 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-  const handleSubscribeYearly = async () => {
-    try {
-      const success = await subscribeToPremium('yearly');
-      if (success) {
-        Alert.alert(
-          '구독 완료',
-          '연간 프리미엄 구독이 활성화되었습니다!\n이제 광고 없이 앱을 이용하실 수 있습니다.',
-          [{ text: '확인' }]
-        );
-      } else {
-        Alert.alert('오류', '구독 처리 중 오류가 발생했습니다.', [{ text: '확인' }]);
-      }
-    } catch (error) {
-      Alert.alert('오류', '구독 처리 중 오류가 발생했습니다.', [{ text: '확인' }]);
-    }
-  };
 
   const handleCancelSubscription = async () => {
     Alert.alert(
@@ -538,27 +522,12 @@ const SettingsScreen: React.FC = () => {
                 </View>
               </View>
               <TouchableOpacity
-                style={styles.settingItem}
+                style={[styles.settingItem, styles.lastSettingItem]}
                 onPress={handleSubscribeMonthly}
               >
                 <View style={styles.settingLabelWithIcon}>
                   <Icon name="card-outline" size={20} color={theme.colors.primary} />
-                  <Text style={styles.settingLabel}>월간 구독 (₩3,900/월)</Text>
-                </View>
-                <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.settingItem, styles.lastSettingItem]}
-                onPress={handleSubscribeYearly}
-              >
-                <View style={styles.settingLabelWithIcon}>
-                  <Icon name="trophy-outline" size={20} color="#FFD700" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.settingLabel}>연간 구독 (₩39,000/년)</Text>
-                    <Text style={[styles.settingValue, { fontSize: getResponsiveFontSize(12), color: '#4CAF50' }]}>
-                      2개월 무료! (17% 할인)
-                    </Text>
-                  </View>
+                  <Text style={styles.settingLabel}>월간 구독 (₩2,800/월)</Text>
                 </View>
                 <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
