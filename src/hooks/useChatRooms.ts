@@ -108,31 +108,26 @@ export const useChatRooms = () => {
 
     const updatedRooms = [...chatRooms, newRoom];
     
-    // 상태 업데이트를 먼저 하여 즈시 UI에 반영
+    // 상태 업데이트를 먼저 하여 즉시 UI에 반영
     setChatRooms(updatedRooms);
-    setCurrentRoomId(roomId);
+    // 현재 채팅방은 설정하지 않음 - 사용자가 직접 선택하도록 함
     
-    console.log('createRoom: State updated immediately for UI responsiveness');
+    console.log('createRoom: State updated immediately for UI responsiveness, no auto room selection');
     
     try {
-      // 마지막에 AsyncStorage에 저장 (비동기)
-      await Promise.all([
-        saveChatRooms(updatedRooms),
-        AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, roomId)
-      ]);
-      
-      console.log('createRoom: Successfully saved to AsyncStorage:', roomId);
+      // AsyncStorage에 채팅방 목록만 저장
+      await saveChatRooms(updatedRooms);
+      console.log('createRoom: Successfully saved rooms to AsyncStorage:', roomId);
       
     } catch (error) {
       console.error('createRoom: Error saving room data:', error);
       // 저장 실패 시 상태 되돌리기
       setChatRooms(chatRooms);
-      setCurrentRoomId(currentRoomId);
       throw error;
     }
     
     return newRoom;
-  }, [chatRooms, currentRoomId]);
+  }, [chatRooms]);
 
   // 채팅방 업데이트
   const updateRoom = useCallback(async (roomId: string, updates: Partial<ChatRoom>, updateTimestamp = true) => {

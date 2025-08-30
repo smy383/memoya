@@ -194,9 +194,8 @@ const ChatRoomsListScreen: React.FC = () => {
       const creationCount = await incrementChatRoomCreationCount();
       console.log(`채팅방 생성 카운트: ${creationCount}`);
       
-      // 즉시 네비게이션 (상태는 이미 업데이트됨)
-      console.log('handleCreateRoom: Navigating to ChatRoom immediately:', newRoom.id);
-      navigation.navigate('ChatRoom', { roomId: newRoom.id });
+      // 자동 입장하지 않고 목록에만 추가
+      console.log('handleCreateRoom: Room created and added to list, no auto navigation');
       
       // 3번마다 전면광고 표시 (프리미엄이 아닌 경우만)
       if (!isPremium && creationCount % 3 === 0) {
@@ -212,7 +211,7 @@ const ChatRoomsListScreen: React.FC = () => {
           } catch (error) {
             console.log('채팅방 생성 전면광고 표시 중 오류:', error);
           }
-        }, 1000); // 네비게이션 후 1초 뒤에 광고 표시
+        }, 500); // 모달 닫힌 후 0.5초 뒤에 광고 표시
       }
       
     } catch (error) {
