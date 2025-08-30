@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform, Alert } from 'react-native';
+import { Platform, Alert, AppState, AppStateStatus } from 'react-native';
 import Purchases, { 
   CustomerInfo, 
   PurchasesOffering, 
@@ -47,11 +47,33 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+  const wasPremiumRef = useRef<boolean>(false);
+  const navigationRef = useRef<any>(null);
 
   // 앱 시작시 RevenueCat 초기화 및 구독 상태 로드
   useEffect(() => {
     initializePurchases();
+    
+    // AppState 리스너 추가
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+    };
   }, []);
+  
+  // 앱이 foreground로 돌아올 때 구독 상태 확인
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (
+      appStateRef.current.match(/inactive|background/) &&
+      nextAppState === 'active'
+    ) {
+      console.log('App has come to the foreground, checking subscription status...');
+      checkCustomerInfo();
+    }
+    appStateRef.current = nextAppState;
+  };
 
   const initializePurchases = async () => {
     try {
@@ -64,7 +86,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       console.log('RevenueCat initialized successfully');
       
       // 현재 사용자 정보 및 구독 상태 확인
-      await checkCustomerInfo();
+      const customerInfo = await Purchases.getCustomerInfo();
+      const isPremiumActive = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] != null;
+      wasPremiumRef.current = isPremiumActive; // 초기 상태 저장
+      updateSubscriptionState(customerInfo);
       
       // 사용 가능한 상품 정보 로드
       await loadOfferings();
@@ -101,7 +126,15 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
   const updateSubscriptionState = (customerInfo: CustomerInfo) => {
     const isPremiumActive = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] != null;
+    const wasPremiuBefore = wasPremiumRef.current;
+    
+    // 프리미엄에서 무료로 전환된 경우 알림
+    if (wasPremiuBefore && !isPremiumActive) {
+      showSubscriptionExpiredAlert();
+    }
+    
     setIsPremium(isPremiumActive);
+    wasPremiumRef.current = isPremiumActive;
     
     if (isPremiumActive) {
       setSubscriptionType('monthly');
@@ -119,6 +152,27 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       isPremiumActive && customerInfo.entitlements.active[PREMIUM_ENTITLEMENT].expirationDate 
         ? new Date(customerInfo.entitlements.active[PREMIUM_ENTITLEMENT].expirationDate) 
         : null
+    );
+  };
+  
+  // 구독 만료 알림 표시
+  const showSubscriptionExpiredAlert = () => {
+    Alert.alert(
+      '프리미엄 구독 만료',
+      '프리미엄 구독 기간이 종료되어 광고가 다시 표시됩니다.\n광고 없이 앱을 이용하시려면 구독을 갱신해주세요.',
+      [
+        { text: '나중에', style: 'cancel' },
+        {
+          text: '구독 갱신',
+          onPress: () => {
+            // 설정 페이지로 이동
+            // navigation이 필요한데, Context에서는 직접 navigation을 사용할 수 없으므로
+            // 전역 navigation ref를 사용하거나 이벤트를 발생시켜야 함
+            // 여기서는 간단히 AsyncStorage에 플래그를 설정하여 App 컴포넌트에서 처리하도록 함
+            AsyncStorage.setItem('navigate_to_settings', 'true');
+          },
+        },
+      ]
     );
   };
 

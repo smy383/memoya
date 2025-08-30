@@ -34,6 +34,27 @@ npm run test
 - **Module resolution errors**: Delete `node_modules` and `package-lock.json`, then `npm install`
 - **Android build issues**: Ensure emulator is running and vector icons are configured
 
+### Build Output Locations
+**IMPORTANT**: Always remember these build output paths for quick access:
+
+**AAB (Android App Bundle) for Play Store release:**
+```bash
+# Build command
+cd android && ./gradlew bundleRelease
+
+# Output location
+android/app/build/outputs/bundle/release/app-release.aab
+```
+
+**APK for testing:**
+```bash
+# Build command  
+cd android && ./gradlew assembleRelease
+
+# Output location
+android/app/build/outputs/apk/release/app-release.apk
+```
+
 ### Android Development Focus
 The project is Android-focused with vector icons configured in `android/app/build.gradle`. The app uses:
 - React Native 0.81.0
@@ -613,28 +634,35 @@ const restoreSubscription = async (): Promise<boolean> => {
 
 **예상된 오류**: API 키가 플레이스홀더이므로 `InvalidCredentialsError` 발생 (정상)
 
-### 🚀 **프로덕션 배포 준비사항**
+### 🚀 **프로덕션 배포 완료 상태 (2025-08-30)**
 
-**현재 상태**: 기술적 구현 100% 완료, API 키 설정만 필요
+**현재 상태**: ✅ **프로덕션 준비 100% 완료**
 
-**프로덕션 체크리스트**:
-1. **RevenueCat 계정 생성** (https://app.revenuecat.com)
-2. **API 키 교체**:
-   ```typescript
-   const REVENUECAT_KEYS = {
-     ios: 'appl_실제_IOS_API_키', 
-     android: 'goog_실제_ANDROID_API_키'
-   };
-   ```
-3. **RevenueCat 대시보드 설정**:
-   - Premium entitlement 생성 (identifier: 'premium')
-   - 월간 구독 상품 생성 (Google Play Console과 연동)
-   - 가격 설정 및 지역별 설정
+**완료된 작업**:
+1. ✅ **RevenueCat 계정 생성 및 설정 완료**
+   - 프로젝트명: memoya
+   - API 키: `goog_POwgEGpLFCiaDaAtCdnEjMTCfVE` (실제 키)
 
-4. **Google Play Console 구독 상품 생성**
-   - 상품 ID: 'memoya_premium_monthly'
-   - 월간 구독으로 설정
-   - RevenueCat과 연동
+2. ✅ **RevenueCat 대시보드 설정 완료**:
+   - Entitlement: `premium` (Premium access to all features)
+   - Offering: `default` (Default Packages)
+   - Package: `Monthly` ($rc_monthly)
+   - Product: `memoya_premium_monthly`
+
+3. ✅ **Google Play Console 구독 상품 생성 완료**
+   - 상품 ID: `memoya_premium_monthly`
+   - 가격: ₩2,800/월 ($2 USD 기준)
+   - 상태: 활성화됨
+   - 테스트 구매: 3건 성공 (2025.8.29)
+
+4. ✅ **Service Account 연동**
+   - JSON 파일: `memoya-470514-48211c68d10e.json`
+   - 권한 문제 있으나 실제 작동에는 영향 없음
+
+5. ✅ **앱 빌드 정보**
+   - 현재 버전: 1.0.7 (versionCode: 12)
+   - AAB 파일 위치: `android/app/build/outputs/bundle/release/app-release.aab`
+   - 구독 기능: 월간 ₩2,800 (연간 구독 제거됨)
 
 ### ⚠️ **중요 사항**
 

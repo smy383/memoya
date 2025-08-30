@@ -304,26 +304,29 @@ const SettingsScreen: React.FC = () => {
   };
 
 
-  const handleCancelSubscription = async () => {
-    Alert.alert(
-      '구독 취소',
-      '정말로 프리미엄 구독을 취소하시겠습니까?\n구독을 취소하면 광고가 다시 표시됩니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '확인',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelSubscription();
-              Alert.alert('구독 취소 완료', '프리미엄 구독이 취소되었습니다.', [{ text: '확인' }]);
-            } catch (error) {
-              Alert.alert('오류', '구독 취소 중 오류가 발생했습니다.', [{ text: '확인' }]);
-            }
-          },
-        },
-      ]
-    );
+  const handleManageSubscription = async () => {
+    try {
+      // Google Play 구독 관리 페이지로 직접 연결
+      const url = 'https://play.google.com/store/account/subscriptions';
+      const supported = await Linking.canOpenURL(url);
+      
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(
+          '구독 관리',
+          'Google Play 스토어에서 구독을 관리할 수 있습니다.\n\n설정 → Google → 결제 및 구독 → 구독에서 Memoya를 선택하세요.',
+          [{ text: '확인' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      Alert.alert(
+        '구독 관리',
+        'Google Play 스토어에서 구독을 관리할 수 있습니다.\n\n설정 → Google → 결제 및 구독 → 구독에서 Memoya를 선택하세요.',
+        [{ text: '확인' }]
+      );
+    }
   };
 
   const formatSubscriptionEndDate = (date: Date | null): string => {
@@ -500,13 +503,13 @@ const SettingsScreen: React.FC = () => {
               )}
               <TouchableOpacity
                 style={[styles.settingItem, styles.lastSettingItem]}
-                onPress={handleCancelSubscription}
+                onPress={handleManageSubscription}
               >
                 <View style={styles.settingLabelWithIcon}>
-                  <Icon name="close-circle-outline" size={20} color="#ff4757" />
-                  <Text style={[styles.settingLabel, { color: '#ff4757' }]}>구독 취소</Text>
+                  <Icon name="settings-outline" size={20} color={theme.colors.primary} />
+                  <Text style={styles.settingLabel}>구독 관리</Text>
                 </View>
-                <Icon name="chevron-forward-outline" size={20} color="#ff4757" />
+                <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
             </>
           ) : (

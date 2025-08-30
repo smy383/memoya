@@ -1,15 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { StatusBar, View, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState, useRef } from 'react';
+import { StatusBar, View, Text, AppState } from 'react-native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import mobileAds from 'react-native-google-mobile-ads';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { SubscriptionProvider } from './src/contexts/SubscriptionContext';
 import { initI18n } from './src/i18n';
 import TabNavigator from './src/components/TabNavigator';
+import { RootTabParamList } from './src/types';
 
 const AppContent: React.FC = () => {
   const { theme, isDark } = useTheme();
+  const navigationRef = useRef<NavigationContainerRef<RootTabParamList>>(null);
+
+  // AppState 변경 시 설정 페이지 이동 확인
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        try {
+          const shouldNavigateToSettings = await AsyncStorage.getItem('navigate_to_settings');
+          if (shouldNavigateToSettings === 'true') {
+            await AsyncStorage.removeItem('navigate_to_settings');
+            // 약간의 지연 후 설정 페이지로 이동
+            setTimeout(() => {
+              if (navigationRef.current) {
+                navigationRef.current.navigate('Settings');
+              }
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error checking navigation flag:', error);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    // 앱 시작 시에도 확인
+    handleAppStateChange('active');
+    
+    return () => subscription?.remove();
+  }, []);
 
   return (
     <>
@@ -17,7 +49,7 @@ const AppContent: React.FC = () => {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={theme.colors.surface}
       />
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <TabNavigator />
       </NavigationContainer>
     </>
