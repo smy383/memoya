@@ -107,10 +107,11 @@ const ChatScreen: React.FC = () => {
     const updatedMessages = addMessage(newMessage);
 
     try {
-      const newMemo: Memo = {
+      const newMemo: Memo & { roomId?: string } = {
         id: newMessage.id,
         content: newMessage.content,
         timestamp: newMessage.timestamp,
+        roomId: currentRoom?.id, // roomId 추가
       };
 
       const memosKey = currentRoom ? `memos_${currentRoom.id}` : 'memos';

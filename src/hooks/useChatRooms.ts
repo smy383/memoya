@@ -107,17 +107,32 @@ export const useChatRooms = () => {
     };
 
     const updatedRooms = [...chatRooms, newRoom];
+    
+    // 상태 업데이트를 먼저 하여 즈시 UI에 반영
     setChatRooms(updatedRooms);
-    await saveChatRooms(updatedRooms);
-    
-    // 새 채팅방을 현재 채팅방으로 설정
     setCurrentRoomId(roomId);
-    await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, roomId);
     
-    console.log('createRoom: Set new room as current:', roomId);
+    console.log('createRoom: State updated immediately for UI responsiveness');
+    
+    try {
+      // 마지막에 AsyncStorage에 저장 (비동기)
+      await Promise.all([
+        saveChatRooms(updatedRooms),
+        AsyncStorage.setItem(STORAGE_KEYS.CURRENT_ROOM_ID, roomId)
+      ]);
+      
+      console.log('createRoom: Successfully saved to AsyncStorage:', roomId);
+      
+    } catch (error) {
+      console.error('createRoom: Error saving room data:', error);
+      // 저장 실패 시 상태 되돌리기
+      setChatRooms(chatRooms);
+      setCurrentRoomId(currentRoomId);
+      throw error;
+    }
     
     return newRoom;
-  }, [chatRooms]);
+  }, [chatRooms, currentRoomId]);
 
   // 채팅방 업데이트
   const updateRoom = useCallback(async (roomId: string, updates: Partial<ChatRoom>, updateTimestamp = true) => {
@@ -234,9 +249,21 @@ export const useChatRooms = () => {
         })
       );
       
-      console.log('refreshAllRoomMetadata: Updated rooms:', updatedRooms.map(r => r.id));
-      setChatRooms(updatedRooms);
-      await saveChatRooms(updatedRooms);
+      // 실제 변경사항이 있을 때만 업데이트
+      const hasChanges = updatedRooms.some((updated, index) => {
+        const original = chatRooms[index];
+        return updated.messageCount !== original.messageCount ||
+               updated.memoCount !== original.memoCount ||
+               updated.lastMessage?.content !== original.lastMessage?.content;
+      });
+      
+      if (hasChanges) {
+        console.log('refreshAllRoomMetadata: Changes detected, updating rooms');
+        setChatRooms(updatedRooms);
+        await saveChatRooms(updatedRooms);
+      } else {
+        console.log('refreshAllRoomMetadata: No changes detected, skipping update');
+      }
     } catch (error) {
       console.error('Error refreshing room metadata:', error);
     }

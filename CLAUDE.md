@@ -39,21 +39,28 @@ npm run test
 
 **AAB (Android App Bundle) for Play Store release:**
 ```bash
-# Build command
-cd android && ./gradlew bundleRelease
+# Build command (returns to root directory after build)
+cd android && ./gradlew bundleRelease && cd ..
 
-# Output location
+# Output location (from project root)
 android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 **APK for testing:**
 ```bash
-# Build command  
-cd android && ./gradlew assembleRelease
+# Build command (returns to root directory after build)
+cd android && ./gradlew assembleRelease && cd ..
 
-# Output location
+# Output location (from project root)
 android/app/build/outputs/apk/release/app-release.apk
 ```
+
+**⚠️ CRITICAL: Working Directory Management**
+- **Always return to project root after build commands** using `&& cd ..`
+- **Why**: `cd android && ./gradlew bundleRelease` changes working directory to `/android/`
+- **Problem**: Subsequent commands like `ls android/app/build/outputs/...` will fail (already inside android folder)
+- **Solution**: Use `cd android && ./gradlew bundleRelease && cd ..` to return to project root
+- **File paths**: All documented paths assume you're in project root directory (`/Users/smymac/Documents/memoya/`)
 
 ### Android Development Focus
 The project is Android-focused with vector icons configured in `android/app/build.gradle`. The app uses:

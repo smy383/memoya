@@ -6,7 +6,9 @@ import {
   FlatList, 
   TouchableOpacity, 
   Alert,
-  RefreshControl 
+  RefreshControl,
+  LayoutAnimation,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -72,7 +74,7 @@ const ChatRoomsListScreen: React.FC = () => {
       if (chatRooms && chatRooms.length > 0) {
         refreshAllRoomMetadata();
       }
-    }, [refreshAllRoomMetadata])
+    }, []) // 의존성 배열을 비워서 무한 루프 방지
   );
 
   const handleRoomPress = async (roomId: string) => {
@@ -181,12 +183,17 @@ const ChatRoomsListScreen: React.FC = () => {
 
   const handleCreateRoom = async (title: string) => {
     try {
+      console.log('handleCreateRoom: Starting room creation');
       const newRoom = await createRoom(title);
       console.log('handleCreateRoom: Created room:', newRoom.id);
       
       // 채팅방 생성 카운터 증가
       const creationCount = await incrementChatRoomCreationCount();
       console.log(`채팅방 생성 카운트: ${creationCount}`);
+      
+      // 즉시 네비게이션 (상태는 이미 업데이트됨)
+      console.log('handleCreateRoom: Navigating to ChatRoom immediately:', newRoom.id);
+      navigation.navigate('ChatRoom', { roomId: newRoom.id });
       
       // 3번마다 전면광고 표시 (프리미엄이 아닌 경우만)
       if (!isPremium && creationCount % 3 === 0) {
@@ -202,11 +209,11 @@ const ChatRoomsListScreen: React.FC = () => {
           } catch (error) {
             console.log('채팅방 생성 전면광고 표시 중 오류:', error);
           }
-        }, 500); // 채팅방 생성 후 0.5초 뒤에 광고 표시
+        }, 1000); // 네비게이션 후 1초 뒤에 광고 표시
       }
       
-      navigation.navigate('ChatRoom', { roomId: newRoom.id });
     } catch (error) {
+      console.error('handleCreateRoom: Error creating room:', error);
       Alert.alert(
         safeT('common.error', '오류'),
         safeT('chatRooms.createError', '새 채팅방 생성 중 오류가 발생했습니다.')
@@ -222,35 +229,68 @@ const ChatRoomsListScreen: React.FC = () => {
     setIsCreateModalVisible(false);
   };
 
-  // 채팅방 목록과 광고를 혼합한 데이터 생성
-  const mixedData = useMemo(() => {
+  // 채팅방 목록과 광고를 혼합한 데이터 생성 (지연된 정렬으로 부드러운 전환)
+  const [sortedRooms, setSortedRooms] = useState<ChatRoom[]>([]);
+  
+  // 즐겨찾기 변경 시 지연된 정렬 업데이트
+  React.useEffect(() => {
     if (!chatRooms || chatRooms.length === 0) {
+      setSortedRooms([]);
+      return;
+    }
+
+    // 레이아웃 애니메이션 설정 (부드러운 전환을 위해)
+    if (Platform.OS === 'ios') {
+      LayoutAnimation.configureNext({
+        duration: 300,
+        create: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+          property: LayoutAnimation.Properties.opacity,
+        },
+        update: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+        },
+        delete: {
+          type: LayoutAnimation.Types.easeInEaseOut,
+          property: LayoutAnimation.Properties.opacity,
+        },
+      });
+    }
+
+    // 100ms 지연으로 부드러운 정렬 업데이트 (더 빠른 응답성)
+    const timeoutId = setTimeout(() => {
+      const newSortedRooms = [...chatRooms].sort((a, b) => {
+        // 즐겨찾기가 우선
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        // 즐겨찾기 상태가 같으면 업데이트 시간으로 정렬
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+      setSortedRooms(newSortedRooms);
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [chatRooms]);
+
+  const mixedData = useMemo(() => {
+    if (!sortedRooms || sortedRooms.length === 0) {
       return [];
     }
 
-    // 즐겨찾기 우선으로 정렬
-    const sortedChatRooms = [...chatRooms].sort((a, b) => {
-      // 즐겨찾기가 우선
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
-      // 즐겨찾기 상태가 같으면 업데이트 시간으로 정렬
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    });
-
     if (isPremium) {
-      return sortedChatRooms.map(room => ({ type: 'chatRoom', data: room }));
+      return sortedRooms.map(room => ({ type: 'chatRoom', data: room }));
     }
 
     const result: Array<{ type: 'chatRoom' | 'ad'; data?: ChatRoom; adIndex?: number }> = [];
-    sortedChatRooms.forEach((room, index) => {
+    sortedRooms.forEach((room, index) => {
       result.push({ type: 'chatRoom', data: room });
       // 3개마다 광고 삽입 (인덱스 2, 5, 8, ... 다음에)
-      if ((index + 1) % 3 === 0 && index < sortedChatRooms.length - 1) {
+      if ((index + 1) % 3 === 0 && index < sortedRooms.length - 1) {
         result.push({ type: 'ad', adIndex: Math.floor(index / 3) });
       }
     });
     return result;
-  }, [chatRooms, isPremium]);
+  }, [sortedRooms, isPremium]);
 
   const renderItem = ({ item }: { item: { type: 'chatRoom' | 'ad'; data?: ChatRoom; adIndex?: number } }) => {
     if (item.type === 'ad') {
@@ -334,7 +374,6 @@ const ChatRoomsListScreen: React.FC = () => {
     listContainer: {
       flex: 1,
       paddingTop: 12,
-      paddingBottom: 80, // FAB 공간 확보
     },
     emptyContainer: {
       flex: 1,
@@ -413,6 +452,12 @@ const ChatRoomsListScreen: React.FC = () => {
               tintColor={theme.colors.primary}
             />
           }
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={6}
+          updateCellsBatchingPeriod={50}
+          contentContainerStyle={{ paddingBottom: 80 }}
           ListEmptyComponent={!isLoading ? renderEmptyState : null}
         />
       </View>

@@ -38,7 +38,7 @@ const MemosScreen: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { theme } = useTheme();
   const { isPremium } = useSubscription();
-  const { chatRooms, updateRoomMetadata, calculateRoomMetadata } = useChatRooms();
+  const { chatRooms, updateRoomMetadata, calculateRoomMetadata, refetch } = useChatRooms();
   const [memos, setMemos] = useState<ExtendedMemo[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filteredMemos, setFilteredMemos] = useState<ExtendedMemo[]>([]);
@@ -66,7 +66,12 @@ const MemosScreen: React.FC = () => {
   // 채팅방 이름 가져오기
   const getRoomName = (roomId: string) => {
     const room = chatRooms.find(r => r.id === roomId);
-    return room?.title || roomId;
+    if (room?.title) {
+      return room.title;
+    }
+    
+    // 채팅방을 찾지 못한 경우 기본값 반환
+    return '삭제된 채팅방';
   };
 
   // 카테고리 이름을 6자로 제한하여 반환
@@ -78,7 +83,7 @@ const MemosScreen: React.FC = () => {
     return roomName.length > 6 ? roomName.substring(0, 6) + '...' : roomName;
   };
 
-  const loadMemos = async () => {
+  const loadMemos = useCallback(async () => {
     try {
       console.log('MemosScreen: Loading memos from chatRooms:', chatRooms.map(r => r.id));
       let allMemos: ExtendedMemo[] = [];
@@ -149,13 +154,21 @@ const MemosScreen: React.FC = () => {
     } catch (error) {
       console.error('Error loading memos:', error);
     }
-  };
+  }, [chatRooms, refetch]);
 
   useFocusEffect(
     useCallback(() => {
-      console.log('MemosScreen: Screen focused, loading memos');
-      loadMemos();
-    }, [chatRooms]) // chatRooms가 변경되면 메모 다시 로드
+      console.log('MemosScreen: Screen focused, refreshing data');
+      // 먼저 최신 채팅방 정보를 가져온 후 메모 로드
+      const refreshAndLoad = async () => {
+        if (refetch) {
+          await refetch(); // 채팅방 정보 새로고침
+          await new Promise<void>(resolve => setTimeout(resolve, 200)); // 상태 업데이트 대기
+        }
+        loadMemos();
+      };
+      refreshAndLoad();
+    }, [refetch, loadMemos]) // refetch와 loadMemos가 변경되면 다시 실행
   );
 
   // chatRooms 변경 시에도 메모 다시 로드
