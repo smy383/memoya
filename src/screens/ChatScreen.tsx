@@ -236,7 +236,7 @@ const ChatScreen: React.FC = () => {
           switch (functionName) {
             case 'create_memo':
               preview = {
-                content: args.content || '새 메모 내용',
+                content: args.content || t('chat.newMemoContent'),
                 tags: args.tags || [],
                 timestamp: new Date().toISOString(),
                 formattedDate: new Date().toLocaleString('ko-KR')
@@ -253,16 +253,16 @@ const ChatScreen: React.FC = () => {
                 
                 preview = {
                   memoId: args.memo_id,
-                  originalContent: existingMemo?.content || '메모를 찾을 수 없습니다',
-                  newContent: args.new_content || '수정된 내용',
+                  originalContent: existingMemo?.content || t('chat.memoNotFound'),
+                  newContent: args.new_content || t('chat.modifiedContent'),
                   timestamp: existingMemo?.timestamp || new Date().toISOString(),
                   formattedDate: existingMemo ? new Date(existingMemo.timestamp).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
                 };
               } catch (error) {
                 preview = {
                   memoId: args.memo_id,
-                  originalContent: '메모를 불러올 수 없습니다',
-                  newContent: args.new_content || '수정된 내용',
+                  originalContent: t('chat.cannotLoadMemo'),
+                  newContent: args.new_content || t('chat.modifiedContent'),
                   timestamp: new Date().toISOString(),
                   formattedDate: new Date().toLocaleString('ko-KR')
                 };
@@ -279,14 +279,14 @@ const ChatScreen: React.FC = () => {
                 
                 preview = {
                   memoId: args.memo_id,
-                  content: existingMemo?.content || '메모를 찾을 수 없습니다',
+                  content: existingMemo?.content || t('chat.memoNotFound'),
                   timestamp: existingMemo?.timestamp || new Date().toISOString(),
                   formattedDate: existingMemo ? new Date(existingMemo.timestamp).toLocaleString('ko-KR') : new Date().toLocaleString('ko-KR')
                 };
               } catch (error) {
                 preview = {
                   memoId: args.memo_id,
-                  content: '메모를 불러올 수 없습니다',
+                  content: t('chat.cannotLoadMemo'),
                   timestamp: new Date().toISOString(),
                   formattedDate: new Date().toLocaleString('ko-KR')
                 };
@@ -298,13 +298,13 @@ const ChatScreen: React.FC = () => {
           let approvalContent = '';
           switch (functionName) {
             case 'create_memo':
-              approvalContent = '메모 생성을 위해 승인을 해주세요.';
+              approvalContent = t('chat.approvalRequiredCreate');
               break;
             case 'update_memo':
-              approvalContent = '메모 수정을 위해 승인을 해주세요.';
+              approvalContent = t('chat.approvalRequiredUpdate');
               break;
             case 'delete_memo':
-              approvalContent = '메모 삭제를 위해 승인을 해주세요.';
+              approvalContent = t('chat.approvalRequiredDelete');
               break;
             default:
               approvalContent = `${functionName} 작업을 실행하시겠습니까?`;
@@ -334,7 +334,7 @@ const ChatScreen: React.FC = () => {
           // 도구 실행 결과 반환 (실제로는 실행하지 않음)
           return {
             success: true,
-            message: '승인 요청이 생성되었습니다.',
+            message: t('chat.approvalRequestCreated'),
             requiresApproval: true
           };
         } else {
@@ -350,7 +350,7 @@ const ChatScreen: React.FC = () => {
       
       const aiResponse = await sendToAI(userMessage, messagesForAI, memoTools, executeTool);
       
-      if (aiResponse && !aiResponse.content.includes('승인 요청이 생성되었습니다')) {
+      if (aiResponse && !aiResponse.content.includes(t('chat.approvalRequestCreated'))) {
         console.log('handleChat: Got AI response, adding to chat');
         addMessage(aiResponse);
       }

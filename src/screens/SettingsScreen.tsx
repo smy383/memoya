@@ -134,7 +134,7 @@ const SettingsScreen: React.FC = () => {
       const fileName = await exportBackupToFile();
       Alert.alert(
         t('common.success'), 
-        `백업 파일이 공유되었습니다.\n파일명: ${fileName}\n\n원하는 앱이나 위치에 저장할 수 있습니다.`
+        t('backup.exportSuccess', { fileName })
       );
     } catch (error) {
       console.error('Error exporting backup:', error);
@@ -144,16 +144,16 @@ const SettingsScreen: React.FC = () => {
 
   const handleImportBackup = () => {
     Alert.alert(
-      'JSON 백업 파일 가져오기',
-      '어떤 방식으로 백업을 가져오시겠습니까?',
+      t('backup.jsonBackupImport'),
+      t('backup.importMethodPrompt'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '파일 선택',
+          text: t('backup.selectFile'),
           onPress: handleFilePickerImport
         },
         {
-          text: '텍스트 입력',
+          text: t('backup.textInput'),
           onPress: handleTextImport
         }
       ]
@@ -167,13 +167,13 @@ const SettingsScreen: React.FC = () => {
       await loadBackupInfo();
       
       Alert.alert(
-        '복구 완료',
-        '백업 파일이 성공적으로 복구되었습니다.\n앱을 재시작해주세요.',
-        [{ text: '확인' }]
+        t('backup.restoreComplete'),
+        t('backup.backupRestoreSuccess'),
+        [{ text: t('common.confirm') }]
       );
     } catch (error) {
       console.error('Error importing backup from file:', error);
-      Alert.alert('오류', error.message || '백업 파일 복구 중 오류가 발생했습니다.');
+      Alert.alert(t('common.error'), error.message || t('backup.fileRestoreError'));
     } finally {
       setIsBackupRestoring(false);
     }
@@ -181,16 +181,16 @@ const SettingsScreen: React.FC = () => {
 
   const handleTextImport = () => {
     Alert.prompt(
-      '백업 텍스트 입력',
-      '백업 파일의 JSON 내용을 붙여넣어 주세요:',
+      t('backup.backupTextInput'),
+      t('backup.backupTextPrompt'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '복구',
+          text: t('backup.restore'),
           style: 'destructive',
           onPress: (backupText) => {
             if (!backupText || backupText.trim() === '') {
-              Alert.alert('오류', '백업 데이터가 입력되지 않았습니다.');
+              Alert.alert(t('common.error'), t('backup.noBackupDataError'));
               return;
             }
             handleBackupTextImport(backupText.trim());
@@ -203,12 +203,12 @@ const SettingsScreen: React.FC = () => {
 
   const handleBackupTextImport = async (backupText: string) => {
     Alert.alert(
-      '백업 데이터에서 복구',
-      `입력한 백업 데이터에서 복구하시겠습니까?\n\n현재 모든 데이터가 삭제되고 백업 데이터로 대체됩니다.`,
+      t('backup.restoreFromBackupData'),
+      t('backup.restoreConfirmMessage'),
       [
-        { text: '취소', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: '복구',
+          text: t('backup.restore'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -221,13 +221,13 @@ const SettingsScreen: React.FC = () => {
               await loadBackupInfo(); // 백업 정보 새로고침
               
               Alert.alert(
-                '복구 완료',
-                '백업 데이터가 성공적으로 복구되었습니다.\n앱을 재시작해주세요.',
-                [{ text: '확인' }]
+                t('backup.restoreComplete'),
+                t('backup.backupRestoreCompleteText'),
+                [{ text: t('common.confirm') }]
               );
             } catch (error) {
               console.error('Error importing backup from text:', error);
-              Alert.alert('오류', error.message || '백업 데이터 복구 중 오류가 발생했습니다.');
+              Alert.alert(t('common.error'), error.message || t('backup.backupDataRestoreError'));
             } finally {
               setIsBackupRestoring(false);
             }
@@ -288,18 +288,18 @@ const SettingsScreen: React.FC = () => {
 
   const handleSubscribeMonthly = async () => {
     try {
-      const success = await subscribeToPremium('monthly');
+      const success = await subscribeToPremium();
       if (success) {
         Alert.alert(
-          '구독 완료',
-          '월간 프리미엄 구독이 활성화되었습니다!\n이제 광고 없이 앱을 이용하실 수 있습니다.',
-          [{ text: '확인' }]
+          t('subscription.subscriptionComplete'),
+          t('subscription.subscriptionCompleteMessage'),
+          [{ text: t('common.confirm') }]
         );
       } else {
-        Alert.alert('오류', '구독 처리 중 오류가 발생했습니다.', [{ text: '확인' }]);
+        Alert.alert(t('common.error'), t('subscription.subscriptionError'), [{ text: t('common.confirm') }]);
       }
     } catch (error) {
-      Alert.alert('오류', '구독 처리 중 오류가 발생했습니다.', [{ text: '확인' }]);
+      Alert.alert(t('common.error'), t('subscription.subscriptionError'), [{ text: t('common.confirm') }]);
     }
   };
 
@@ -314,17 +314,17 @@ const SettingsScreen: React.FC = () => {
         await Linking.openURL(url);
       } else {
         Alert.alert(
-          '구독 관리',
-          'Google Play 스토어에서 구독을 관리할 수 있습니다.\n\n설정 → Google → 결제 및 구독 → 구독에서 Memoya를 선택하세요.',
-          [{ text: '확인' }]
+          t('subscription.manageSubscription'),
+          t('subscription.manageSubscriptionMessage'),
+          [{ text: t('common.confirm') }]
         );
       }
     } catch (error) {
       console.error('Error opening subscription management:', error);
       Alert.alert(
-        '구독 관리',
-        'Google Play 스토어에서 구독을 관리할 수 있습니다.\n\n설정 → Google → 결제 및 구독 → 구독에서 Memoya를 선택하세요.',
-        [{ text: '확인' }]
+        t('subscription.manageSubscription'),
+        t('subscription.manageSubscriptionMessage'),
+        [{ text: t('common.confirm') }]
       );
     }
   };
@@ -342,7 +342,7 @@ const SettingsScreen: React.FC = () => {
     const privacyUrl = 'https://smy383.github.io/memoya/docs/privacy-policy.html';
     Linking.openURL(privacyUrl).catch(err => {
       console.error('Failed to open privacy policy URL:', err);
-      Alert.alert('오류', '개인정보처리방침을 열 수 없습니다.');
+      Alert.alert(t('common.error'), t('subscription.privacyPolicyError'));
     });
   };
 
@@ -468,33 +468,33 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>프리미엄 구독</Text>
+        <Text style={styles.sectionTitle}>{t('subscription.premiumSection')}</Text>
         <View style={styles.section}>
           {isPremium ? (
             <>
               <View style={styles.settingItem}>
                 <View style={styles.settingLabelWithIcon}>
                   <Icon name="star" size={20} color="#FFD700" />
-                  <Text style={styles.settingLabel}>구독 상태</Text>
+                  <Text style={styles.settingLabel}>{t('subscription.subscriptionStatus')}</Text>
                 </View>
                 <Text style={[styles.settingValue, { color: '#4CAF50', fontWeight: '600' }]}>
-                  프리미엄 활성화
+                  {t('subscription.premiumActive')}
                 </Text>
               </View>
               <View style={styles.settingItem}>
                 <View style={styles.settingLabelWithIcon}>
                   <Icon name="card-outline" size={20} color={theme.colors.textSecondary} />
-                  <Text style={styles.settingLabel}>구독 타입</Text>
+                  <Text style={styles.settingLabel}>{t('subscription.subscriptionType')}</Text>
                 </View>
                 <Text style={styles.settingValue}>
-                  {subscriptionType === 'monthly' ? '월간 구독' : '연간 구독'}
+                  {subscriptionType === 'monthly' ? t('subscription.monthlySubscription') : t('subscription.yearlySubscription')}
                 </Text>
               </View>
               {subscriptionEndDate && (
                 <View style={styles.settingItem}>
                   <View style={styles.settingLabelWithIcon}>
                     <Icon name="calendar-outline" size={20} color={theme.colors.textSecondary} />
-                    <Text style={styles.settingLabel}>만료일</Text>
+                    <Text style={styles.settingLabel}>{t('subscription.expirationDate')}</Text>
                   </View>
                   <Text style={styles.settingValue}>
                     {formatSubscriptionEndDate(subscriptionEndDate)}
@@ -507,7 +507,7 @@ const SettingsScreen: React.FC = () => {
               >
                 <View style={styles.settingLabelWithIcon}>
                   <Icon name="settings-outline" size={20} color={theme.colors.primary} />
-                  <Text style={styles.settingLabel}>구독 관리</Text>
+                  <Text style={styles.settingLabel}>{t('subscription.manageSubscription')}</Text>
                 </View>
                 <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
@@ -517,10 +517,10 @@ const SettingsScreen: React.FC = () => {
               <View style={[styles.settingItem, { paddingVertical: 16 }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.settingLabel, { fontSize: getResponsiveFontSize(16), marginBottom: 4 }]}>
-                    광고 없는 프리미엄 경험
+                    {t('subscription.premiumExperience')}
                   </Text>
                   <Text style={[styles.settingValue, { fontSize: getResponsiveFontSize(13) }]}>
-                    구독하고 광고 없이 앱을 이용해보세요
+                    {t('subscription.premiumDescription')}
                   </Text>
                 </View>
               </View>
@@ -530,7 +530,7 @@ const SettingsScreen: React.FC = () => {
               >
                 <View style={styles.settingLabelWithIcon}>
                   <Icon name="card-outline" size={20} color={theme.colors.primary} />
-                  <Text style={styles.settingLabel}>월간 구독 (₩2,800/월)</Text>
+                  <Text style={styles.settingLabel}>{t('subscription.monthlySubscriptionPrice')}</Text>
                 </View>
                 <Icon name="chevron-forward-outline" size={20} color={theme.colors.textSecondary} />
               </TouchableOpacity>
@@ -558,11 +558,11 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.settingLabelWithIcon}>
               <Icon name="folder-outline" size={20} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.settingLabel}>저장된 백업</Text>
+                <Text style={styles.settingLabel}>{t('backup.savedBackupLabel')}</Text>
                 <Text style={[styles.settingValue, { fontSize: getResponsiveFontSize(12), marginTop: 2 }]}>
                   {backupInfo?.exists 
-                    ? `${backupInfo.timestamp} (${backupInfo.dataCount}개 항목)`
-                    : '백업 없음'
+                    ? t('backup.backupTimestamp', { timestamp: backupInfo.timestamp, count: backupInfo.dataCount })
+                    : t('backup.noBackupData')
                   }
                 </Text>
               </View>
@@ -608,7 +608,7 @@ const SettingsScreen: React.FC = () => {
             <View style={styles.settingLabelWithIcon}>
               <Icon name="share-outline" size={20} color={backupInfo?.exists ? theme.colors.primary : theme.colors.textSecondary} />
               <Text style={[styles.settingLabel, { color: backupInfo?.exists ? theme.colors.text : theme.colors.textSecondary }]}>
-                JSON 파일로 내보내기
+                {t('backup.exportJSON')}
               </Text>
             </View>
             <Icon name="chevron-forward-outline" size={20} color={backupInfo?.exists ? theme.colors.textSecondary : '#ccc'} />
@@ -620,7 +620,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="document-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>JSON 파일에서 가져오기</Text>
+              <Text style={styles.settingLabel}>{t('backup.importJSON')}</Text>
             </View>
             {isBackupRestoring ? (
               <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -639,7 +639,7 @@ const SettingsScreen: React.FC = () => {
           >
             <View style={styles.settingLabelWithIcon}>
               <Icon name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.settingLabel}>개인정보처리방침</Text>
+              <Text style={styles.settingLabel}>{t('subscription.privacyPolicy')}</Text>
             </View>
             <Icon name="open-outline" size={20} color={theme.colors.textSecondary} />
           </TouchableOpacity>

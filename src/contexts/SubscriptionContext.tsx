@@ -7,6 +7,7 @@ import Purchases, {
   PurchasesPackage,
   PURCHASES_ERROR_CODE 
 } from 'react-native-purchases';
+import { useTranslation } from 'react-i18next';
 
 interface SubscriptionContextType {
   isPremium: boolean;
@@ -42,6 +43,7 @@ const REVENUECAT_KEYS = {
 const PREMIUM_ENTITLEMENT = 'premium';
 
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
+  const { t } = useTranslation();
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [subscriptionType, setSubscriptionType] = useState<'free' | 'monthly' | null>('free');
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<Date | null>(null);
@@ -179,7 +181,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
   const handlePurchaseSuccess = async (customerInfo: CustomerInfo) => {
     try {
       updateSubscriptionState(customerInfo);
-      Alert.alert('구독 완료', '프리미엄 구독이 활성화되었습니다!');
+      Alert.alert(t('subscription.subscriptionComplete'), t('subscription.premiumActivated'));
     } catch (error) {
       console.error('Error handling purchase success:', error);
     }
@@ -262,14 +264,14 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       setIsLoading(true);
       
       if (!currentOffering) {
-        Alert.alert('구독 실패', '사용 가능한 구독 상품이 없습니다.');
+        Alert.alert(t('subscription.subscriptionFailed'), t('subscription.noProductsAvailable'));
         return false;
       }
 
       // 월간 구독 패키지 찾기 (첫 번째 패키지를 사용)
       const monthlyPackage = currentOffering.availablePackages[0];
       if (!monthlyPackage) {
-        Alert.alert('구독 실패', '월간 구독 상품을 찾을 수 없습니다.');
+        Alert.alert(t('subscription.subscriptionFailed'), t('subscription.monthlyProductNotFound'));
         return false;
       }
 
@@ -289,7 +291,7 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
         console.log('User cancelled subscription');
         return false;
       } else {
-        Alert.alert('구독 실패', '구독 처리 중 문제가 발생했습니다.');
+        Alert.alert(t('subscription.subscriptionFailed'), t('subscription.subscriptionProcessError'));
         return false;
       }
     } finally {
@@ -303,10 +305,10 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       
       // Google Play 구독 취소는 Google Play 스토어에서만 가능
       Alert.alert(
-        '구독 취소',
-        'Google Play 스토어에서 구독을 취소할 수 있습니다.\n\n설정 → 구독 → Memoya를 선택하여 구독을 관리하세요.',
+        t('subscription.subscriptionCancel'),
+        t('subscription.cancelInPlayStore'),
         [
-          { text: '확인', style: 'default' }
+          { text: t('common.confirm'), style: 'default' }
         ]
       );
       
@@ -332,15 +334,15 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       
       if (isPremiumActive) {
         updateSubscriptionState(customerInfo);
-        Alert.alert('복원 완료', '프리미엄 구독이 복원되었습니다!');
+        Alert.alert(t('subscription.restoreComplete'), t('subscription.premiumRestored'));
         return true;
       } else {
-        Alert.alert('복원 실패', '활성 구독을 찾을 수 없습니다.');
+        Alert.alert(t('subscription.restoreFailed'), t('subscription.noActiveSubscription'));
         return false;
       }
     } catch (error) {
       console.error('구독 복원 실패:', error);
-      Alert.alert('복원 오류', '구독 복원 중 문제가 발생했습니다.');
+      Alert.alert(t('subscription.restoreError'), t('subscription.restoreProcessError'));
       return false;
     } finally {
       setIsLoading(false);
