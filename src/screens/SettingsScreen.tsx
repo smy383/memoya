@@ -645,7 +645,7 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
           <View style={[styles.settingItem, styles.lastSettingItem]}>
             <Text style={styles.settingLabel}>{safeT('settings.version', '버전')}</Text>
-            <Text style={styles.settingValue}>1.0.9</Text>
+            <Text style={styles.settingValue}>1.2.0</Text>
           </View>
         </View>
         </View>
