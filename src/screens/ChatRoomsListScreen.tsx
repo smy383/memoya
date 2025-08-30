@@ -72,9 +72,12 @@ const ChatRoomsListScreen: React.FC = () => {
       console.log('ChatRoomsListScreen: Screen focused, refreshing metadata');
       // 채팅방이 있는 경우에만 새로고침
       if (chatRooms && chatRooms.length > 0) {
-        refreshAllRoomMetadata();
+        // 약간의 지연을 두어 다른 화면에서 저장된 데이터가 반영되도록 함
+        setTimeout(() => {
+          refreshAllRoomMetadata();
+        }, 100);
       }
-    }, []) // 의존성 배열을 비워서 무한 루프 방지
+    }, [chatRooms, refreshAllRoomMetadata])
   );
 
   const handleRoomPress = async (roomId: string) => {
